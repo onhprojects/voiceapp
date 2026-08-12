@@ -9,7 +9,7 @@ import {
     X,
     ChevronDown,
     LogOut,
-    Key, Files, LucideListTodo, Mic,
+    Key, Files, LucideListTodo, Mic, FileText, Settings,
 } from 'lucide-react';
 import { useGlobal } from "@/lib/context/GlobalContext";
 import { createSPASassClient } from "@/lib/supabase/client";
@@ -48,6 +48,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         { name: 'Homepage', href: '/app', icon: Home },
         { name: 'Intake Assessment', href: '/app/intake', icon: Mic },
         { name: 'Audio-Text Assessment', href: '/app/audio-text-assessment', icon: Mic },
+        { name: 'Resume Builder', href: '/app/resume-builder', icon: FileText },
+        { name: 'Resume Builder Settings', href: '/app/resume-builder/admin/settings', icon: Settings },
         { name: 'Example Storage', href: '/app/storage', icon: Files },
         { name: 'Example Table', href: '/app/table', icon: LucideListTodo },
         { name: 'User Settings', href: '/app/user-settings', icon: User },

@@ -176,7 +176,7 @@ export function buildDocx(doc: PmNode): Uint8Array {
 function buildZip(files: Record<string, string>): Uint8Array {
   const encoder = new TextEncoder()
   const chunks: Uint8Array[] = []
-  const central: { name: string; offset: number; size: number }[] = []
+  const central: { name: string; offset: number; size: number; crc: number }[] = []
   let offset = 0
 
   const push = (bytes: Uint8Array) => {
@@ -188,6 +188,7 @@ function buildZip(files: Record<string, string>): Uint8Array {
     const nameBytes = encoder.encode(name)
     const data = encoder.encode(content)
     const crc = crc32(data)
+    const localHeaderOffset = offset
 
     // Local file header
     const local = new Uint8Array(30 + nameBytes.length)
@@ -206,7 +207,7 @@ function buildZip(files: Record<string, string>): Uint8Array {
     local.set(nameBytes, 30)
 
     push(local)
-    central.push({ name, offset, size: data.length })
+    central.push({ name, offset: localHeaderOffset, size: data.length, crc })
     push(data)
   }
 
@@ -223,9 +224,9 @@ function buildZip(files: Record<string, string>): Uint8Array {
     dv.setUint16(10, 0, true) // method
     dv.setUint16(12, 0, true) // mod time
     dv.setUint16(14, 0x21, true) // mod date
-    dv.setUint32(16, crc32(encoder.encode('')), true) // crc (unused for dir)
-    dv.setUint32(20, 0, true) // compressed size
-    dv.setUint32(24, 0, true) // uncompressed size
+    dv.setUint32(16, entry.crc, true) // crc
+    dv.setUint32(20, entry.size, true) // compressed size
+    dv.setUint32(24, entry.size, true) // uncompressed size
     dv.setUint16(28, nameBytes.length, true)
     dv.setUint16(30, 0, true) // extra
     dv.setUint16(32, 0, true) // comment
