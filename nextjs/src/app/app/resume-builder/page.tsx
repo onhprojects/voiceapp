@@ -1,6 +1,6 @@
 // Resume Builder — dashboard: list user's resumes + "New".
 import Link from 'next/link'
-import { Plus, FileText, Trash2 } from 'lucide-react'
+import { Plus, FileText } from 'lucide-react'
 import { listResumes } from './lib/supabase-resumes'
 import { DeleteResumeButton } from './components/DeleteResumeButton'
 

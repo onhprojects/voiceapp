@@ -1,7 +1,7 @@
 // Resume Builder — template picker page.
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { TemplatePicker } from './components/TemplatePicker'
+import { TemplatePicker } from '../components/TemplatePicker'
 
 export default function NewResumePage() {
   return (

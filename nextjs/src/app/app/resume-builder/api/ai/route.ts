@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createSSRClient } from '@/lib/supabase/server'
 import { getOpenRouterModel } from '../../lib/supabase-resumes'
 import { streamChatCompletion } from '../../lib/openrouter'
-import type { AiRequest } from '../../lib/types'
+import type { AiRequest, ResumeDoc } from '../../lib/types'
 
 export const runtime = 'nodejs'
 

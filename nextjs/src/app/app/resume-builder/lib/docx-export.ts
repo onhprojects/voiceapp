@@ -50,7 +50,7 @@ function paragraph(node: PmNode): string {
 }
 
 /** Serialize a list item (bullet or ordered) into a <w:p> with numbering. */
-function listItem(node: PmNode, ordered: boolean, index: number): string {
+function listItem(node: PmNode, ordered: boolean): string {
   const runs = (node.content ?? [])
     .map((child) => (child.type === 'text' ? textRun(child) : ''))
     .join('')
@@ -61,21 +61,21 @@ function listItem(node: PmNode, ordered: boolean, index: number): string {
 }
 
 /** Serialize a block node (paragraph, heading, list) into OOXML paragraphs. */
-function block(node: PmNode, ordered: boolean, index: number): string {
+function block(node: PmNode, ordered: boolean): string {
   switch (node.type) {
     case 'paragraph':
     case 'heading':
       return paragraph(node)
     case 'bulletList':
       return (node.content ?? [])
-        .map((li, i) => listItem(li, false, i))
+        .map((li) => listItem(li, false))
         .join('')
     case 'orderedList':
       return (node.content ?? [])
-        .map((li, i) => listItem(li, true, i))
+        .map((li) => listItem(li, true))
         .join('')
     case 'listItem':
-      return listItem(node, ordered, index)
+      return listItem(node, ordered)
     default:
       return paragraph(node)
   }
@@ -85,13 +85,10 @@ function block(node: PmNode, ordered: boolean, index: number): string {
 function buildBody(doc: PmNode): string {
   const content = doc.content ?? []
   let ordered = false
-  let index = 0
   const paragraphs = content.map((node) => {
     if (node.type === 'orderedList') ordered = true
     if (node.type === 'bulletList') ordered = false
-    const out = block(node, ordered, index)
-    index += 1
-    return out
+    return block(node, ordered)
   })
   return paragraphs.join('')
 }
