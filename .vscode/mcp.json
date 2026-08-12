@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "com.supabase/mcp": {
+      "type": "stdio",
+      "command": "/workspaces/voiceapp/.vscode/run-supabase-mcp.sh",
+      "args": [],
+      "env": {}
+    }
+  }
+}
