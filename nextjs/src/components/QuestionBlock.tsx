@@ -7,19 +7,30 @@ import { CheckCircle2 } from 'lucide-react'
 interface QuestionBlockProps {
   questionNumber: number
   questionText: string
+  sectionTitle?: string
   isRecorded: boolean
-  onRecordingComplete: (blob: Blob, duration: number) => void
+  onRecordingComplete: (questionNumber: number, questionText: string, sectionTitle: string, blob: Blob, duration: number, transcript: string) => void
   isUploading?: boolean
+  transcript?: string
+  onTranscriptChange?: (questionNumber: number, text: string) => void
+  storageFolder?: string
 }
 
 export function QuestionBlock({
   questionNumber,
   questionText,
+  sectionTitle = 'Assessment',
   isRecorded,
   onRecordingComplete,
   isUploading = false,
+  transcript = '',
+  onTranscriptChange,
+  storageFolder = 'intake-audio',
 }: QuestionBlockProps) {
   const [showRecorder, setShowRecorder] = useState(false)
+  // storageFolder is reserved for future use with multi-bucket support
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _storageFolder = storageFolder
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 space-y-4">
@@ -45,7 +56,7 @@ export function QuestionBlock({
       {!showRecorder && !isRecorded && (
         <button
           onClick={() => setShowRecorder(true)}
-          className="w-full py-2 px-4 text-sm font-medium text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-colors border border-primary-200"
+          className="max-w-[300px] mx-auto block py-2 px-4 text-sm font-medium text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-colors border border-primary-200"
         >
           + Record Answer
         </button>
@@ -54,11 +65,26 @@ export function QuestionBlock({
       {showRecorder && !isRecorded && (
         <div className="pt-2">
           <AudioRecorder
-            questionNumber={questionNumber}
-            onRecordingComplete={(blob, duration) => {
-              onRecordingComplete(blob, duration)
+            onRecordingComplete={(blob, duration, transcript) => {
+              onTranscriptChange?.(questionNumber, transcript)
+              onRecordingComplete(questionNumber, questionText, sectionTitle, blob, duration, transcript)
               setShowRecorder(false)
             }}
+          />
+        </div>
+      )}
+
+      {/* Transcript Text Area */}
+      {(showRecorder || isRecorded || isUploading || transcript) && onTranscriptChange && (
+        <div className="pt-2 space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            My Answer
+          </label>
+          <textarea
+            value={transcript}
+            onChange={(e) => onTranscriptChange(questionNumber, e.target.value)}
+            placeholder="Your transcribed response will appear here (or type manually)..."
+            className="w-full min-h-20 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           />
         </div>
       )}

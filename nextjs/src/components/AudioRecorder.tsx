@@ -1,10 +1,10 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { Mic, Square, Play, Pause, Trash2, Download } from 'lucide-react'
+import { Mic, Square, Play, Pause, Trash2, Download, Volume2 } from 'lucide-react'
 
 interface AudioRecorderProps {
-  onRecordingComplete: (blob: Blob, duration: number) => void
+  onRecordingComplete: (blob: Blob, duration: number, transcript: string) => void
   onRecordingStart?: () => void
 }
 
@@ -14,10 +14,54 @@ interface RecordingState {
   audioBlob: Blob | null
   duration: number
   currentTime: number
+  transcript: string
+  isListening: boolean
+  isSpeechRecognitionSupported: boolean
+}
+
+type SpeechRecognitionType = typeof SpeechRecognition & {
+  new (): {
+    continuous: boolean
+    interimResults: boolean
+    start: () => void
+    stop: () => void
+    abort: () => void
+    onstart: (() => void) | null
+    onresult: ((event: SpeechRecognitionEvent) => void) | null
+    onerror: ((event: SpeechRecognitionErrorEvent) => void) | null
+    onend: (() => void) | null
+  }
+}
+
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList
+  isFinal: boolean
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string
+}
+
+interface SpeechRecognitionResultList {
+  length: number
+  item(index: number): SpeechRecognitionResult
+  [index: number]: SpeechRecognitionResult
+}
+
+interface SpeechRecognitionResult {
+  length: number
+  item(index: number): SpeechRecognitionAlternative
+  [index: number]: SpeechRecognitionAlternative
+  isFinal: boolean
+}
+
+interface SpeechRecognitionAlternative {
+  transcript: string
+  confidence: number
 }
 
 export function AudioRecorder({ 
-  onRecordingComplete, 
+  onRecordingComplete,
   onRecordingStart
 }: AudioRecorderProps) {
   const [state, setState] = useState<RecordingState>({
@@ -26,6 +70,9 @@ export function AudioRecorder({
     audioBlob: null,
     duration: 0,
     currentTime: 0,
+    transcript: '',
+    isListening: false,
+    isSpeechRecognitionSupported: false,
   })
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
@@ -34,6 +81,85 @@ export function AudioRecorder({
   const streamRef = useRef<MediaStream | null>(null)
   const audioElementRef = useRef<HTMLAudioElement | null>(null)
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const speechRecognitionRef = useRef<any>(null)
+  const interimTranscriptRef = useRef<string>('')
+
+  // Initialize speech recognition
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    
+    if (SpeechRecognition) {
+      setState(prev => ({ ...prev, isSpeechRecognitionSupported: true }))
+      
+      const recognition = new SpeechRecognition() as any
+      recognition.continuous = true
+      recognition.interimResults = true
+      recognition.lang = 'en-US'
+      
+      recognition.onstart = () => {
+        setState(prev => ({ ...prev, isListening: true }))
+      }
+      
+      recognition.onresult = (event: any) => {
+        interimTranscriptRef.current = ''
+        
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript
+          
+          if (event.results[i].isFinal) {
+            setState(prev => {
+              const updatedTranscript = prev.transcript + ' ' + transcript
+              return { ...prev, transcript: updatedTranscript.trim() }
+            })
+          } else {
+            interimTranscriptRef.current += transcript + ' '
+          }
+        }
+      }
+      
+      recognition.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error)
+        if (event.error === 'no-speech') {
+          // Continue listening silently
+        }
+      }
+      
+      recognition.onend = () => {
+        setState(prev => ({ ...prev, isListening: false }))
+        // Restart listening if still recording
+        if (state.isRecording && !state.isPaused) {
+          try {
+            recognition.start()
+          } catch (e) {
+            // Already started
+          }
+        }
+      }
+      
+      speechRecognitionRef.current = recognition
+    }
+  }, [])
+
+  const startSpeechRecognition = () => {
+    if (speechRecognitionRef.current && state.isSpeechRecognitionSupported) {
+      try {
+        interimTranscriptRef.current = ''
+        speechRecognitionRef.current.start()
+      } catch (e) {
+        console.log('Speech recognition already started')
+      }
+    }
+  }
+
+  const stopSpeechRecognition = () => {
+    if (speechRecognitionRef.current) {
+      try {
+        speechRecognitionRef.current.stop()
+      } catch (e) {
+        console.log('Could not stop speech recognition')
+      }
+    }
+  }
 
   const startRecording = async () => {
     try {
@@ -67,6 +193,7 @@ export function AudioRecorder({
 
         // Stop all tracks to release mic
         stream.getTracks().forEach((track) => track.stop())
+        stopSpeechRecognition()
       }
 
       mediaRecorderRef.current = mediaRecorder
@@ -81,6 +208,7 @@ export function AudioRecorder({
       }))
 
       onRecordingStart?.()
+      startSpeechRecognition()
 
       // Start timer
       let seconds = 0
@@ -111,9 +239,11 @@ export function AudioRecorder({
       if (state.isPaused) {
         mediaRecorderRef.current.resume()
         setState((prev) => ({ ...prev, isPaused: false }))
+        startSpeechRecognition()
       } else {
         mediaRecorderRef.current.pause()
         setState((prev) => ({ ...prev, isPaused: true }))
+        stopSpeechRecognition()
       }
     }
   }
@@ -125,6 +255,9 @@ export function AudioRecorder({
       audioBlob: null,
       duration: 0,
       currentTime: 0,
+      transcript: '',
+      isListening: false,
+      isSpeechRecognitionSupported: state.isSpeechRecognitionSupported,
     })
     if (audioElementRef.current) {
       audioElementRef.current.src = ''
@@ -134,7 +267,7 @@ export function AudioRecorder({
 
   const saveRecording = () => {
     if (state.audioBlob) {
-      onRecordingComplete(state.audioBlob, state.duration)
+      onRecordingComplete(state.audioBlob, state.duration, state.transcript)
     }
   }
 
@@ -146,6 +279,7 @@ export function AudioRecorder({
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop())
       }
+      stopSpeechRecognition()
     }
   }, [])
 
@@ -202,6 +336,29 @@ export function AudioRecorder({
           </>
         )}
       </div>
+
+      {/* Speech Recognition Status Indicator */}
+      {state.isRecording && state.isSpeechRecognitionSupported && (
+        <div className="flex items-center gap-2 text-xs text-blue-600 bg-blue-50 px-3 py-2 rounded-lg">
+          <Volume2 className="h-3 w-3 animate-pulse" />
+          <span>
+            {state.isListening ? 'Listening and transcribing...' : 'Initializing speech recognition...'}
+          </span>
+        </div>
+      )}
+
+      {/* Transcript Display During Recording */}
+      {state.isRecording && (state.transcript || interimTranscriptRef.current) && (
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-xs font-medium text-blue-700 mb-2">Live Transcript:</p>
+          <p className="text-sm text-gray-800 leading-relaxed">
+            <span>{state.transcript}</span>
+            {interimTranscriptRef.current && (
+              <span className="italic text-gray-500 opacity-60">{interimTranscriptRef.current}</span>
+            )}
+          </p>
+        </div>
+      )}
 
       {/* Playback Controls */}
       {state.audioBlob && !state.isRecording && (

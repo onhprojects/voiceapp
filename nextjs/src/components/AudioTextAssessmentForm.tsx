@@ -5,7 +5,7 @@ import { QuestionBlock } from './QuestionBlock'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Download, ChevronDown } from 'lucide-react'
-import { uploadAudioFile, uploadAudioAndSaveResponse, createAssessment } from '@/app/app/intake/actions'
+import { uploadAudioFile, uploadAudioAndSaveResponse, createAssessment } from '@/app/app/audio-text-assessment/actions'
 
 // The questionnaire data structure
 const QUESTIONNAIRE_DATA = [
@@ -158,13 +158,13 @@ const QUESTIONNAIRE_DATA = [
   },
 ]
 
-
-export function IntakeForm() {
+export function AudioTextAssessmentForm() {
   const [assessmentId, setAssessmentId] = useState<string | null>(null)
   const [recordedQuestions, setRecordedQuestions] = useState<Set<number>>(new Set())
   const [uploadingQuestions, setUploadingQuestions] = useState<Set<number>>(new Set())
   const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set([0]))
   const [isExporting, setIsExporting] = useState(false)
+  const [transcripts, setTranscripts] = useState<Record<number, string>>({})
 
   const totalQuestions = QUESTIONNAIRE_DATA.reduce((sum, section) => sum + section.questions.length, 0)
   const recordedCount = recordedQuestions.size
@@ -176,7 +176,7 @@ export function IntakeForm() {
     try {
       const assessment = await createAssessment({
         sectionIndex: 0,
-        sectionTitle: 'Intake Assessment',
+        sectionTitle: 'Audio-Text Assessment',
       })
       setAssessmentId(assessment.id)
       return assessment.id
@@ -196,6 +196,14 @@ export function IntakeForm() {
       duration: number,
       transcript: string = ''
     ) => {
+      // Update transcript in state first
+      if (transcript) {
+        setTranscripts((prev) => ({
+          ...prev,
+          [questionNumber]: transcript,
+        }))
+      }
+
       // Get or create assessment
       let currentAssessmentId = assessmentId
       if (!currentAssessmentId) {
@@ -210,12 +218,17 @@ export function IntakeForm() {
         // Upload audio file
         const filePath = await uploadAudioFile(currentAssessmentId, questionNumber, blob)
 
+        // Use the transcript passed in, fallback to state if needed
+        const transcriptText = transcript
+
         // Save response record
         await uploadAudioAndSaveResponse(currentAssessmentId, {
+          assessmentId: currentAssessmentId,
           questionNumber,
           questionText,
           sectionTitle,
           audioFilePath: filePath,
+          transcriptText,
           durationSeconds: duration,
         })
 
@@ -235,6 +248,13 @@ export function IntakeForm() {
     },
     [assessmentId, initializeAssessment]
   )
+
+  const handleTranscriptChange = useCallback((questionNumber: number, text: string) => {
+    setTranscripts((prev) => ({
+      ...prev,
+      [questionNumber]: text,
+    }))
+  }, [])
 
   const toggleSection = (index: number) => {
     setExpandedSections((prev) => {
@@ -257,18 +277,31 @@ export function IntakeForm() {
     setIsExporting(true)
     try {
       // Create a manifest of all recorded questions
+      const recordedQuestionsData = Array.from(recordedQuestions).map((qNum) => {
+        let currentQNum = 0
+        for (const section of QUESTIONNAIRE_DATA) {
+          for (const question of section.questions) {
+            currentQNum++
+            if (currentQNum === qNum) {
+              return {
+                number: qNum,
+                text: question,
+                section: section.section,
+                transcript: transcripts[qNum] || '',
+              }
+            }
+          }
+        }
+        return { number: qNum }
+      })
+
       const manifest = {
         assessmentId,
         totalQuestions,
         recordedQuestions: recordedCount,
         percentage: Math.round((recordedCount / totalQuestions) * 100),
         exportedAt: new Date().toISOString(),
-        questions: Array.from(recordedQuestions).map((qNum) => {
-          const allQuestions = QUESTIONNAIRE_DATA.flatMap((sec) =>
-            sec.questions.map((q, i) => ({ text: q, section: sec.section, number: allQuestions.length + i + 1 }))
-          )
-          return allQuestions[qNum - 1] || { number: qNum }
-        }),
+        questions: recordedQuestionsData,
       }
 
       // For now, just log the manifest
@@ -289,9 +322,9 @@ export function IntakeForm() {
       {/* Header Card */}
       <Card>
         <CardHeader>
-          <CardTitle>Intake Assessment Questionnaire</CardTitle>
+          <CardTitle>Audio & Text Assessment Questionnaire</CardTitle>
           <CardDescription>
-            Record responses to all questions. Your audio will be securely saved to our database.
+            Record responses with automatic transcription. Edit text directly if needed. All recordings are securely saved.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -300,99 +333,81 @@ export function IntakeForm() {
               <p className="font-medium text-gray-900">
                 Progress: {recordedCount} of {totalQuestions} questions recorded
               </p>
-              <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary-600 transition-all duration-300"
-                  style={{ width: `${(recordedCount / totalQuestions) * 100}%` }}
-                />
-              </div>
+              <p className="text-xs text-gray-500">
+                {Math.round((recordedCount / totalQuestions) * 100)}% Complete
+              </p>
             </div>
-            <Button onClick={exportAssessment} disabled={isExporting} className="w-full sm:w-auto">
+            <Button
+              onClick={exportAssessment}
+              disabled={isExporting || recordedCount === 0}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
               <Download className="h-4 w-4 mr-2" />
-              {isExporting ? 'Exporting...' : 'Export Progress'}
+              {isExporting ? 'Exporting...' : 'Export Results'}
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Sections */}
+      {/* Questions Sections */}
       <div className="space-y-4">
-        {QUESTIONNAIRE_DATA.map((section, sectionIndex) => {
-          // Calculate starting question number for this section
-          let sectionStartNumber = 1
-          for (let i = 0; i < sectionIndex; i++) {
-            sectionStartNumber += QUESTIONNAIRE_DATA[i].questions.length
-          }
-
-          const sectionQuestions = section.questions
-          const isExpanded = expandedSections.has(sectionIndex)
-          const sectionRecordedCount = sectionQuestions.filter((_, i) =>
-            recordedQuestions.has(sectionStartNumber + i)
-          ).length
-
-          const sectionContent = sectionQuestions.map((questionText, questionIndex) => {
-            const questionNumber = sectionStartNumber + questionIndex
-            const isRecorded = recordedQuestions.has(questionNumber)
-            const isUploading = uploadingQuestions.has(questionNumber)
-
-            return (
-              <QuestionBlock
-                key={questionNumber}
-                questionNumber={questionNumber}
-                questionText={questionText}
-                sectionTitle={section.section}
-                isRecorded={isRecorded}
-                isUploading={isUploading}
-                onRecordingComplete={(qNum, qText, sectionTitle, blob, duration, transcript) =>
-                  handleRecordingComplete(qNum, qText, sectionTitle, blob, duration, transcript)
-                }
+        {QUESTIONNAIRE_DATA.map((section, sectionIndex) => (
+          <Card key={sectionIndex}>
+            <div
+              className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50"
+              onClick={() => toggleSection(sectionIndex)}
+            >
+              <h2 className="text-lg font-semibold text-gray-900">{section.section}</h2>
+              <ChevronDown
+                className={`h-5 w-5 transition-transform ${
+                  expandedSections.has(sectionIndex) ? 'rotate-180' : ''
+                }`}
               />
-            )
-          })
+            </div>
 
-          return (
-            <Card key={sectionIndex} className="overflow-hidden">
-              <button
-                onClick={() => toggleSection(sectionIndex)}
-                className="w-full flex items-center justify-between p-4 sm:p-6 hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex-1 text-left">
-                  <h3 className="text-lg font-semibold text-gray-900">{section.section}</h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {sectionRecordedCount} of {sectionQuestions.length} recorded
-                  </p>
-                </div>
-                <ChevronDown
-                  className={`h-5 w-5 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                />
-              </button>
+            {expandedSections.has(sectionIndex) && (
+              <CardContent className="border-t pt-4 space-y-6">
+                {section.questions.map((question, questionIndex) => {
+                  const globalQuestionNumber =
+                    QUESTIONNAIRE_DATA.slice(0, sectionIndex).reduce((sum, s) => sum + s.questions.length, 0) +
+                    questionIndex +
+                    1
 
-              {isExpanded && (
-                <CardContent className="border-t border-gray-200 space-y-4 p-4 sm:p-6">
-                  {sectionContent}
-                </CardContent>
-              )}
-            </Card>
-          )
-        })}
+                  return (
+                    <QuestionBlock
+                      key={globalQuestionNumber}
+                      questionNumber={globalQuestionNumber}
+                      questionText={question}
+                      sectionTitle={section.section}
+                      isRecorded={recordedQuestions.has(globalQuestionNumber)}
+                      isUploading={uploadingQuestions.has(globalQuestionNumber)}
+                      transcript={transcripts[globalQuestionNumber] || ''}
+                      onRecordingComplete={(qNum, qText, sectionTitle, blob, duration) =>
+                        handleRecordingComplete(qNum, qText, sectionTitle, blob, duration)
+                      }
+                      onTranscriptChange={handleTranscriptChange}
+                      storageFolder="audio-text-audio"
+                    />
+                  )
+                })}
+              </CardContent>
+            )}
+          </Card>
+        ))}
       </div>
 
-      {/* Summary Footer */}
-      <Card>
+      {/* Footer Summary */}
+      <Card className="bg-gray-50">
         <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <p className="text-sm text-gray-600">
-                Assessment Status: <span className="font-medium text-gray-900">{recordedCount > 0 ? 'In Progress' : 'Not Started'}</span>
-              </p>
-              <p className="text-sm text-gray-600 mt-1">
-                Completion: <span className="font-medium text-gray-900">{Math.round((recordedCount / totalQuestions) * 100)}%</span>
-              </p>
-            </div>
-            <Button onClick={exportAssessment} disabled={isExporting || recordedCount === 0} className="w-full sm:w-auto">
-              <Download className="h-4 w-4 mr-2" />
-              {isExporting ? 'Exporting...' : 'Download Assessment'}
-            </Button>
+          <div className="text-center">
+            <p className="text-lg font-semibold text-gray-900">
+              {recordedCount} of {totalQuestions} questions recorded
+            </p>
+            <p className="text-sm text-gray-600 mt-2">
+              {recordedCount === totalQuestions
+                ? '✓ Assessment complete!'
+                : `${totalQuestions - recordedCount} questions remaining`}
+            </p>
           </div>
         </CardContent>
       </Card>

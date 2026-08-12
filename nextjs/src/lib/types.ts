@@ -168,6 +168,75 @@ export type Database = {
         }
         Relationships: []
       }
+      audio_text_assessments: {
+        Row: {
+          id: string
+          user_id: string
+          section_index: number
+          section_title: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          section_index: number
+          section_title: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          section_index?: number
+          section_title?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      audio_text_responses: {
+        Row: {
+          id: string
+          assessment_id: string
+          question_number: number
+          question_text: string
+          section_title: string
+          transcript_text: string | null
+          audio_file_path: string | null
+          duration_seconds: number | null
+          recorded_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          assessment_id: string
+          question_number: number
+          question_text: string
+          section_title: string
+          transcript_text?: string | null
+          audio_file_path?: string | null
+          duration_seconds?: number | null
+          recorded_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          assessment_id?: string
+          question_number?: number
+          question_text?: string
+          section_title?: string
+          transcript_text?: string | null
+          audio_file_path?: string | null
+          duration_seconds?: number | null
+          recorded_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       todo_list: {
         Row: {
           created_at: string

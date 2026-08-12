@@ -47,6 +47,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const navigation = [
         { name: 'Homepage', href: '/app', icon: Home },
         { name: 'Intake Assessment', href: '/app/intake', icon: Mic },
+        { name: 'Audio-Text Assessment', href: '/app/audio-text-assessment', icon: Mic },
         { name: 'Example Storage', href: '/app/storage', icon: Files },
         { name: 'Example Table', href: '/app/table', icon: LucideListTodo },
         { name: 'User Settings', href: '/app/user-settings', icon: User },
