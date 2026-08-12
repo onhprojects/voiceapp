@@ -270,6 +270,54 @@ export type Database = {
         }
         Relationships: []
       }
+      resumes: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          template: string
+          doc_json: Json
+          model: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title?: string
+          template?: string
+          doc_json?: Json
+          model?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          template?: string
+          doc_json?: Json
+          model?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      app_settings: {
+        Row: {
+          key: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          value: Json
+        }
+        Update: {
+          key?: string
+          value?: Json
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
