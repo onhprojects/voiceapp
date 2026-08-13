@@ -97,7 +97,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             <div className="flex-shrink-0">
-              <span className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-500 bg-clip-text text-transparent">
+              <span className="text-2xl font-bold text-primary-600">
                 {productName || 'Resume Builder'}
               </span>
             </div>
@@ -136,7 +136,7 @@ export default function Home() {
               </div>
               <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-tight">
                 Land your dream job with a{' '}
-                <span className="bg-gradient-to-r from-primary-600 to-violet-500 bg-clip-text text-transparent">
+                <span className="text-primary-600">
                   standout resume
                 </span>
               </h1>
