@@ -1,10 +1,10 @@
-// Resume Builder — route layout. Reuses the root AppLayout.
-import AppLayout from '@/components/AppLayout'
-
+// Resume Builder — route layout.
+// The parent app/layout.tsx already wraps routes in AppLayout (sidebar + header),
+// so this layout is a pass-through to avoid rendering a duplicate header/sidebar.
 export default function ResumeBuilderLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  return <AppLayout>{children}</AppLayout>
+  return <>{children}</>
 }
