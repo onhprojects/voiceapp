@@ -19,22 +19,22 @@ interface RecordingState {
   isSpeechRecognitionSupported: boolean
 }
 
-type SpeechRecognitionType = typeof SpeechRecognition & {
-  new (): {
-    continuous: boolean
-    interimResults: boolean
-    start: () => void
-    stop: () => void
-    abort: () => void
-    onstart: (() => void) | null
-    onresult: ((event: SpeechRecognitionEvent) => void) | null
-    onerror: ((event: SpeechRecognitionErrorEvent) => void) | null
-    onend: (() => void) | null
-  }
+type SpeechRecognitionType = {
+  continuous: boolean
+  interimResults: boolean
+  lang: string
+  start: () => void
+  stop: () => void
+  abort: () => void
+  onstart: (() => void) | null
+  onresult: ((event: SpeechRecognitionEvent) => void) | null
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null
+  onend: (() => void) | null
 }
 
 interface SpeechRecognitionEvent extends Event {
   results: SpeechRecognitionResultList
+  resultIndex: number
   isFinal: boolean
 }
 
@@ -81,17 +81,17 @@ export function AudioRecorder({
   const streamRef = useRef<MediaStream | null>(null)
   const audioElementRef = useRef<HTMLAudioElement | null>(null)
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null)
-  const speechRecognitionRef = useRef<any>(null)
+  const speechRecognitionRef = useRef<SpeechRecognitionType | null>(null)
   const interimTranscriptRef = useRef<string>('')
 
   // Initialize speech recognition
   useEffect(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    const SpeechRecognition = (window as unknown as { SpeechRecognition?: new () => SpeechRecognitionType; webkitSpeechRecognition?: new () => SpeechRecognitionType }).SpeechRecognition || (window as unknown as { SpeechRecognition?: new () => SpeechRecognitionType; webkitSpeechRecognition?: new () => SpeechRecognitionType }).webkitSpeechRecognition
     
     if (SpeechRecognition) {
       setState(prev => ({ ...prev, isSpeechRecognitionSupported: true }))
       
-      const recognition = new SpeechRecognition() as any
+      const recognition = new SpeechRecognition()
       recognition.continuous = true
       recognition.interimResults = true
       recognition.lang = 'en-US'
@@ -100,7 +100,7 @@ export function AudioRecorder({
         setState(prev => ({ ...prev, isListening: true }))
       }
       
-      recognition.onresult = (event: any) => {
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
         interimTranscriptRef.current = ''
         
         for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -117,7 +117,7 @@ export function AudioRecorder({
         }
       }
       
-      recognition.onerror = (event: any) => {
+      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
         console.error('Speech recognition error:', event.error)
         if (event.error === 'no-speech') {
           // Continue listening silently
@@ -130,7 +130,7 @@ export function AudioRecorder({
         if (state.isRecording && !state.isPaused) {
           try {
             recognition.start()
-          } catch (e) {
+          } catch {
             // Already started
           }
         }
@@ -145,7 +145,7 @@ export function AudioRecorder({
       try {
         interimTranscriptRef.current = ''
         speechRecognitionRef.current.start()
-      } catch (e) {
+      } catch {
         console.log('Speech recognition already started')
       }
     }
@@ -155,7 +155,7 @@ export function AudioRecorder({
     if (speechRecognitionRef.current) {
       try {
         speechRecognitionRef.current.stop()
-      } catch (e) {
+      } catch {
         console.log('Could not stop speech recognition')
       }
     }

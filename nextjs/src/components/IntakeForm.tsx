@@ -193,8 +193,7 @@ export function IntakeForm() {
       questionText: string,
       sectionTitle: string,
       blob: Blob,
-      duration: number,
-      transcript: string = ''
+      duration: number
     ) => {
       // Get or create assessment
       let currentAssessmentId = assessmentId
@@ -256,6 +255,18 @@ export function IntakeForm() {
 
     setIsExporting(true)
     try {
+      // Build a flat list of all questions with their global numbers
+      const allQuestions = QUESTIONNAIRE_DATA.flatMap((sec, sectionIndex) => {
+        let sectionStartNumber = 1
+        for (let i = 0; i < sectionIndex; i++) {
+          sectionStartNumber += QUESTIONNAIRE_DATA[i].questions.length
+        }
+        return sec.questions.map((q, i) => ({
+          text: q,
+          section: sec.section,
+          number: sectionStartNumber + i,
+        }))
+      })
       // Create a manifest of all recorded questions
       const manifest = {
         assessmentId,
@@ -264,9 +275,6 @@ export function IntakeForm() {
         percentage: Math.round((recordedCount / totalQuestions) * 100),
         exportedAt: new Date().toISOString(),
         questions: Array.from(recordedQuestions).map((qNum) => {
-          const allQuestions = QUESTIONNAIRE_DATA.flatMap((sec) =>
-            sec.questions.map((q, i) => ({ text: q, section: sec.section, number: allQuestions.length + i + 1 }))
-          )
           return allQuestions[qNum - 1] || { number: qNum }
         }),
       }
@@ -343,8 +351,8 @@ export function IntakeForm() {
                 sectionTitle={section.section}
                 isRecorded={isRecorded}
                 isUploading={isUploading}
-                onRecordingComplete={(qNum, qText, sectionTitle, blob, duration, transcript) =>
-                  handleRecordingComplete(qNum, qText, sectionTitle, blob, duration, transcript)
+                onRecordingComplete={(qNum, qText, sectionTitle, blob, duration) =>
+                  handleRecordingComplete(qNum, qText, sectionTitle, blob, duration)
                 }
               />
             )

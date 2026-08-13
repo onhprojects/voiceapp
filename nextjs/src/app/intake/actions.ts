@@ -29,13 +29,12 @@ export async function createPublicAssessment(
   const supabase = createSPAClient()
 
   // Create the assessment
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase
     .from('public_intake_assessments')
     .insert({
       session_id: input.sessionId,
       email: input.email,
-    }) as any)
+    }))
     .select()
     .single()
 
@@ -84,7 +83,6 @@ export async function savePublicIntakeResponse(
   const supabase = createSPAClient()
 
   // Create the response record
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: response, error: responseError } = await (supabase
     .from('public_intake_responses')
     .insert({
@@ -95,7 +93,7 @@ export async function savePublicIntakeResponse(
       audio_file_path: input.audioFilePath,
       duration_seconds: input.durationSeconds,
       recorded_at: new Date().toISOString(),
-    }) as any)
+    }))
     .select()
     .single()
 

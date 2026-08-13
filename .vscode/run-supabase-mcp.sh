@@ -6,11 +6,14 @@ REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 
 cd "$REPO_ROOT"
 
-if [ -f .env ]; then
-  set -a
-  source .env
-  set +a
-fi
+# Load .env from repo root or nextjs/ (the actual location of the .env file)
+for ENV_FILE in "$REPO_ROOT/.env" "$REPO_ROOT/nextjs/.env"; do
+  if [ -f "$ENV_FILE" ]; then
+    set -a
+    source "$ENV_FILE"
+    set +a
+  fi
+done
 
 TOKEN="${SUPABASE_ACCESS_TOKEN:-${PRIVATE_SUPABASE_ACCESS_TOKEN:-${SUPABASE_TOKEN:-}}}"
 

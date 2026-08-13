@@ -40,7 +40,7 @@ export async function createAssessment(input: CreateAssessmentInput): Promise<Au
       user_id: user.id,
       section_index: input.sectionIndex,
       section_title: input.sectionTitle,
-    }) as any // eslint-disable-line @typescript-eslint/no-explicit-any
+    })
 
   const { data, error } = await query.select().single()
 
@@ -71,7 +71,7 @@ export async function uploadAudioAndSaveResponse(
     .from('audio_text_assessments')
     .select('id, user_id')
     .eq('id', assessmentId)
-    .single() as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    .single())
 
   if (assessmentError || !assessment || assessment.user_id !== user.id) {
     throw new Error('Assessment not found or not authorized')
@@ -89,7 +89,7 @@ export async function uploadAudioAndSaveResponse(
       audio_file_path: input.audioFilePath,
       duration_seconds: input.durationSeconds,
       recorded_at: new Date().toISOString(),
-    }) as any // eslint-disable-line @typescript-eslint/no-explicit-any
+    })
 
   const { data: response, error: responseError } = await responseQuery.select().single()
 
@@ -121,7 +121,7 @@ export async function uploadAudioFile(
     .from('audio_text_assessments')
     .select('id, user_id')
     .eq('id', assessmentId)
-    .single() as any // eslint-disable-line @typescript-eslint/no-explicit-any
+    .single()
 
   const { data: assessment, error: assessmentError } = await uploadCheckQuery
 

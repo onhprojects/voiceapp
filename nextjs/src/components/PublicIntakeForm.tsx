@@ -383,8 +383,8 @@ export function PublicIntakeForm() {
                 questionText={questionText}
                 isRecorded={isRecorded}
                 isUploading={isUploading}
-                onRecordingComplete={(blob, duration) =>
-                  handleRecordingComplete(questionNumber, questionText, section.section, blob, duration)
+                onRecordingComplete={(qNum, qText, secTitle, blob, duration) =>
+                  handleRecordingComplete(qNum, qText, secTitle, blob, duration)
                 }
               />
             )

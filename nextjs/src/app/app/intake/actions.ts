@@ -12,7 +12,6 @@ interface CreateAssessmentInput {
 }
 
 interface SaveResponseInput {
-  assessmentId: string
   questionNumber: number
   questionText: string
   sectionTitle: string
@@ -33,14 +32,13 @@ export async function createAssessment(input: CreateAssessmentInput): Promise<In
   }
 
   // Create the assessment
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const query = supabase
     .from('intake_assessments')
     .insert({
       user_id: user.id,
       section_index: input.sectionIndex,
       section_title: input.sectionTitle,
-    }) as any
+    })
 
   const { data, error } = await query.select().single()
 
@@ -67,19 +65,17 @@ export async function uploadAudioAndSaveResponse(
   }
 
   // Verify that the assessment belongs to the user
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: assessment, error: assessmentError } = await (supabase
     .from('intake_assessments')
     .select('id, user_id')
     .eq('id', assessmentId)
-    .single() as any)
+    .single())
 
   if (assessmentError || !assessment || assessment.user_id !== user.id) {
     throw new Error('Assessment not found or not authorized')
   }
 
   // Create the response record
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const responseQuery = supabase
     .from('intake_responses')
     .insert({
@@ -90,7 +86,7 @@ export async function uploadAudioAndSaveResponse(
       audio_file_path: input.audioFilePath,
       duration_seconds: input.durationSeconds,
       recorded_at: new Date().toISOString(),
-    }) as any
+    })
 
   const { data: response, error: responseError } = await responseQuery.select().single()
 
@@ -118,12 +114,11 @@ export async function uploadAudioFile(
   }
 
   // Verify that the assessment belongs to the user
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const uploadCheckQuery = supabase
     .from('intake_assessments')
     .select('id, user_id')
     .eq('id', assessmentId)
-    .single() as any
+    .single()
 
   const { data: assessment, error: assessmentError } = await uploadCheckQuery
 
@@ -161,12 +156,11 @@ export async function getAssessments(): Promise<IntakeAssessment[]> {
     throw new Error('User not authenticated')
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const assessmentsQuery = supabase
     .from('intake_assessments')
     .select('*')
     .eq('user_id', user.id)
-    .order('created_at', { ascending: false }) as any
+    .order('created_at', { ascending: false })
 
   const { data, error } = await assessmentsQuery
 
@@ -192,12 +186,11 @@ export async function getAssessmentResponses(
   }
 
   // Verify that the assessment belongs to the user
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const responseCheckQuery = supabase
     .from('intake_assessments')
     .select('id, user_id')
     .eq('id', assessmentId)
-    .single() as any
+    .single()
 
   const { data: assessment, error: assessmentError } = await responseCheckQuery
 
@@ -205,12 +198,11 @@ export async function getAssessmentResponses(
     throw new Error('Assessment not found or not authorized')
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const responsesQuery = supabase
     .from('intake_responses')
     .select('*')
     .eq('assessment_id', assessmentId)
-    .order('question_number', { ascending: true }) as any
+    .order('question_number', { ascending: true })
 
   const { data, error } = await responsesQuery
 
