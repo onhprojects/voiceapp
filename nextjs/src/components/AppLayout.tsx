@@ -49,9 +49,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         { name: 'Intake Assessment', href: '/app/intake', icon: Mic },
         { name: 'Audio-Text Assessment', href: '/app/audio-text-assessment', icon: Mic },
         { name: 'Resume Builder', href: '/app/resume-builder', icon: FileText },
-        { name: 'Resume Builder Settings', href: '/app/resume-builder/admin/settings', icon: Settings },
-        { name: 'Example Storage', href: '/app/storage', icon: Files },
-        { name: 'Example Table', href: '/app/table', icon: LucideListTodo },
+        { name: 'Resume Settings', href: '/app/resume-builder/admin/settings', icon: Settings },
+        { name: 'My Files', href: '/app/storage', icon: Files },
+        { name: 'To Do Lists', href: '/app/table', icon: LucideListTodo },
         { name: 'User Settings', href: '/app/user-settings', icon: User },
     ];
 

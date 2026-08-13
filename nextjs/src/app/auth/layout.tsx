@@ -9,21 +9,21 @@ export default function AuthLayout({
     const productName = process.env.NEXT_PUBLIC_PRODUCTNAME;
     const testimonials = [
         {
-            quote: "This template helped us launch our SaaS product in just two weeks. The authentication and multi-tenancy features are rock solid.",
+            quote: "The AI writing assistant helped me turn a plain list of duties into a compelling summary. I landed three interviews in the first week of applying.",
             author: "Sarah Chen",
-            role: "CTO, TechStart",
+            role: "Marketing Manager",
             avatar: "SC"
         },
         {
-            quote: "The best part is how well thought out the organization management is. It saved us months of development time.",
+            quote: "I tailored my resume to each job description in minutes instead of hours. The one-click .docx export opened perfectly in every ATS I applied through.",
             author: "Michael Roberts",
-            role: "Founder, DataFlow",
+            role: "Software Engineer",
             avatar: "MR"
         },
         {
-            quote: "Clean code, great documentation, and excellent support. Exactly what we needed to get our MVP off the ground.",
+            quote: "The autosave and cloud storage meant I could edit my resume from my laptop and phone without ever losing progress. It genuinely made job hunting less stressful.",
             author: "Jessica Kim",
-            role: "Lead Developer, CloudScale",
+            role: "Recent Graduate",
             avatar: "JK"
         }
     ];
@@ -54,7 +54,7 @@ export default function AuthLayout({
                 <div className="w-full flex items-center justify-center p-12">
                     <div className="space-y-6 max-w-lg">
                         <h3 className="text-white text-2xl font-bold mb-8">
-                            Trusted by developers worldwide
+                            Loved by job seekers everywhere
                         </h3>
                         {testimonials.map((testimonial, index) => (
                             <div
@@ -85,7 +85,7 @@ export default function AuthLayout({
                         ))}
                         <div className="mt-8 text-center">
                             <p className="text-primary-100 text-sm">
-                                Join thousands of developers building with {productName}
+                                Join thousands of job seekers landing roles with {productName}
                             </p>
                         </div>
                     </div>
