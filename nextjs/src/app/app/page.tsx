@@ -2,7 +2,16 @@
 import React from 'react';
 import { useGlobal } from '@/lib/context/GlobalContext';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { CalendarDays, Settings, ExternalLink } from 'lucide-react';
+import {
+    CalendarDays,
+    Settings,
+    Home,
+    Mic,
+    FileText,
+    Files,
+    LucideListTodo,
+    User,
+} from 'lucide-react';
 import Link from 'next/link';
 
 export default function DashboardContent() {
@@ -44,17 +53,82 @@ export default function DashboardContent() {
                     <CardDescription>Frequently used features</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="grid gap-4 md:grid-cols-2">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                         <Link
-                            href="/app/user-settings"
+                            href="/app"
+                            className="flex items-center gap-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                            <div className="p-2 bg-primary-50 rounded-full">
+                                <Home className="h-4 w-4 text-primary-600" />
+                            </div>
+                            <div>
+                                <h3 className="font-medium">Home</h3>
+                                <p className="text-sm text-gray-500">Your dashboard overview</p>
+                            </div>
+                        </Link>
+
+                        <Link
+                            href="/app/intake"
+                            className="flex items-center gap-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                            <div className="p-2 bg-primary-50 rounded-full">
+                                <Mic className="h-4 w-4 text-primary-600" />
+                            </div>
+                            <div>
+                                <h3 className="font-medium">Intake Assessment</h3>
+                                <p className="text-sm text-gray-500">Record audio responses</p>
+                            </div>
+                        </Link>
+
+                        <Link
+                            href="/app/audio-text-assessment"
+                            className="flex items-center gap-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                            <div className="p-2 bg-primary-50 rounded-full">
+                                <Mic className="h-4 w-4 text-primary-600" />
+                            </div>
+                            <div>
+                                <h3 className="font-medium">Audio-Text Assessment</h3>
+                                <p className="text-sm text-gray-500">Record with transcription</p>
+                            </div>
+                        </Link>
+
+                        <Link
+                            href="/app/resume-builder"
+                            className="flex items-center gap-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                            <div className="p-2 bg-primary-50 rounded-full">
+                                <FileText className="h-4 w-4 text-primary-600" />
+                            </div>
+                            <div>
+                                <h3 className="font-medium">Resume Builder</h3>
+                                <p className="text-sm text-gray-500">Create and edit resumes</p>
+                            </div>
+                        </Link>
+
+                        <Link
+                            href="/app/resume-builder/admin/settings"
                             className="flex items-center gap-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
                         >
                             <div className="p-2 bg-primary-50 rounded-full">
                                 <Settings className="h-4 w-4 text-primary-600" />
                             </div>
                             <div>
-                                <h3 className="font-medium">User Settings</h3>
-                                <p className="text-sm text-gray-500">Manage your account preferences</p>
+                                <h3 className="font-medium">Resume Settings</h3>
+                                <p className="text-sm text-gray-500">Manage AI model settings</p>
+                            </div>
+                        </Link>
+
+                        <Link
+                            href="/app/storage"
+                            className="flex items-center gap-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                            <div className="p-2 bg-primary-50 rounded-full">
+                                <Files className="h-4 w-4 text-primary-600" />
+                            </div>
+                            <div>
+                                <h3 className="font-medium">My Files</h3>
+                                <p className="text-sm text-gray-500">Browse your uploaded files</p>
                             </div>
                         </Link>
 
@@ -63,11 +137,24 @@ export default function DashboardContent() {
                             className="flex items-center gap-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
                         >
                             <div className="p-2 bg-primary-50 rounded-full">
-                                <ExternalLink className="h-4 w-4 text-primary-600" />
+                                <LucideListTodo className="h-4 w-4 text-primary-600" />
                             </div>
                             <div>
-                                <h3 className="font-medium">Example Page</h3>
-                                <p className="text-sm text-gray-500">Check out example features</p>
+                                <h3 className="font-medium">To Do List</h3>
+                                <p className="text-sm text-gray-500">Manage your tasks</p>
+                            </div>
+                        </Link>
+
+                        <Link
+                            href="/app/user-settings"
+                            className="flex items-center gap-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                            <div className="p-2 bg-primary-50 rounded-full">
+                                <User className="h-4 w-4 text-primary-600" />
+                            </div>
+                            <div>
+                                <h3 className="font-medium">User Settings</h3>
+                                <p className="text-sm text-gray-500">Manage your account preferences</p>
                             </div>
                         </Link>
                     </div>

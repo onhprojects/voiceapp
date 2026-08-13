@@ -4,6 +4,7 @@ import React, { useState, useCallback } from 'react'
 import { QuestionBlock } from './QuestionBlock'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { ProgressBar } from '@/components/ui/ProgressBar'
 import { Download, ChevronDown } from 'lucide-react'
 import { uploadAudioFile, uploadAudioAndSaveResponse, createAssessment } from '@/app/app/audio-text-assessment/actions'
 
@@ -336,6 +337,7 @@ export function AudioTextAssessmentForm() {
               <p className="text-xs text-gray-500">
                 {Math.round((recordedCount / totalQuestions) * 100)}% Complete
               </p>
+              <ProgressBar value={(recordedCount / totalQuestions) * 100} />
             </div>
             <Button
               onClick={exportAssessment}

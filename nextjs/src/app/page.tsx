@@ -32,8 +32,8 @@ export default function Home() {
       title: 'AI-Powered Writing',
       description:
         'Generate a compelling summary, improve your experience bullets, tailor your resume to a job description, or draft a skills list — all with one click.',
-      color: 'text-violet-600',
-      bg: 'bg-violet-50',
+      color: 'text-blue-600',
+      bg: 'bg-blue-50',
     },
     {
       icon: FileText,
@@ -93,7 +93,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       {/* Nav */}
-      <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-sm z-50 border-b border-gray-100">
+      <nav className="fixed top-0 w-full bg-[#eff7f6] z-50 border-b border-[#d8d8d8]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             <div className="flex-shrink-0">
@@ -113,7 +113,10 @@ export default function Home() {
               </Link>
             </div>
             <div className="hidden md:flex items-center space-x-4">
-              <Link href="/auth/login" className="text-gray-600 hover:text-gray-900">
+              <Link
+                href="/auth/login"
+                className="px-4 py-2 rounded-lg bg-blue-100 text-blue-700 font-medium hover:bg-blue-200 transition-colors"
+              >
                 Login
               </Link>
               <Link href="/auth/register" className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors">
@@ -130,14 +133,14 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-100 text-violet-700 text-sm font-medium mb-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-medium mb-6">
                 <Sparkles className="h-4 w-4" />
                 AI-powered resume builder
               </div>
               <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-tight">
-                Land your dream job with a{' '}
+                Create your resume the easy way with{' '}
                 <span className="text-primary-600">
-                  standout resume
+                  AI
                 </span>
               </h1>
               <p className="mt-6 text-xl text-gray-600 max-w-xl">
@@ -171,7 +174,7 @@ export default function Home() {
 
             {/* Hero image */}
             <div className="relative">
-              <div className="absolute -inset-4 -z-10 rounded-3xl bg-gradient-to-tr from-primary-200/40 to-violet-200/40 blur-2xl" />
+              <div className="absolute -inset-4 -z-10 rounded-3xl bg-gradient-to-tr from-primary-200/40 to-blue-200/40 blur-2xl" />
               <img
                 src="https://images.unsplash.com/photo-1586281380349-632531db7ed4?auto=format&fit=crop&w=1200&q=80"
                 alt="Resume writing on a laptop"
@@ -249,7 +252,7 @@ export default function Home() {
               loading="lazy"
             />
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-100 text-violet-700 text-sm font-medium mb-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-medium mb-4">
                 <Wand2 className="h-4 w-4" />
                 AI assistance
               </div>

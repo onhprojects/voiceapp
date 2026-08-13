@@ -4,6 +4,7 @@ import React, { useState, useCallback } from 'react'
 import { QuestionBlock } from './QuestionBlock'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { ProgressBar } from '@/components/ui/ProgressBar'
 import { Download, ChevronDown } from 'lucide-react'
 import { uploadAudioFile, uploadAudioAndSaveResponse, createAssessment } from '@/app/app/intake/actions'
 
@@ -308,12 +309,7 @@ export function IntakeForm() {
               <p className="font-medium text-gray-900">
                 Progress: {recordedCount} of {totalQuestions} questions recorded
               </p>
-              <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary-600 transition-all duration-300"
-                  style={{ width: `${(recordedCount / totalQuestions) * 100}%` }}
-                />
-              </div>
+              <ProgressBar value={(recordedCount / totalQuestions) * 100} minWidth={75} />
             </div>
             <Button onClick={exportAssessment} disabled={isExporting} className="w-full sm:w-auto">
               <Download className="h-4 w-4 mr-2" />
