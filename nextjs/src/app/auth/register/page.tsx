@@ -37,7 +37,7 @@ export default function RegisterPage() {
 
             if (error) throw error;
 
-            router.push('/auth/verify-email');
+            router.push('/app');
         } catch (err: Error | unknown) {
             if(err instanceof Error) {
                 setError(err.message);
