@@ -45,7 +45,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const productName = process.env.NEXT_PUBLIC_PRODUCTNAME;
 
     const navigation = [
-        { name: 'Homepage', href: '/app', icon: Home },
+        { name: 'Home', href: '/app', icon: Home },
         { name: 'Intake Assessment', href: '/app/intake', icon: Mic },
         { name: 'Audio-Text Assessment', href: '/app/audio-text-assessment', icon: Mic },
         { name: 'Resume Builder', href: '/app/resume-builder', icon: FileText },
@@ -115,6 +115,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     >
                         <Menu className="h-6 w-6"/>
                     </button>
+
+                    <Link
+                        href="/app/resume-builder"
+                        className="hidden sm:flex items-center text-sm font-medium text-gray-700 hover:text-primary-600 transition-colors"
+                    >
+                        <FileText className="mr-2 h-4 w-4 text-gray-400" />
+                        Resume Builder
+                    </Link>
 
                     <div className="relative ml-auto">
                         <button
