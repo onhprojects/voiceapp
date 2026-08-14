@@ -318,6 +318,111 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_submissions: {
+        Row: {
+          id: string
+          first_name: string
+          last_name: string
+          email_address: string
+          phone_number: string | null
+          message: string
+          user_id: string | null
+          status: string
+          source: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          first_name: string
+          last_name: string
+          email_address: string
+          phone_number?: string | null
+          message: string
+          user_id?: string | null
+          status?: string
+          source?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          first_name?: string
+          last_name?: string
+          email_address?: string
+          phone_number?: string | null
+          message?: string
+          user_id?: string | null
+          status?: string
+          source?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_data: {
+        Row: {
+          user_id: string
+          user_role: string
+          first_name: string | null
+          last_name: string | null
+          email: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          user_role?: string
+          first_name?: string | null
+          last_name?: string | null
+          email?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          user_id?: string
+          user_role?: string
+          first_name?: string | null
+          last_name?: string | null
+          email?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      admin_settings: {
+        Row: {
+          id: string
+          option_name: string
+          option_value: string
+          option_field_type: string
+          option_title: string
+          option_description: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          option_name: string
+          option_value?: string
+          option_field_type?: string
+          option_title: string
+          option_description?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          option_name?: string
+          option_value?: string
+          option_field_type?: string
+          option_title?: string
+          option_description?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

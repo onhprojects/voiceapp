@@ -9,7 +9,7 @@ import {
     X,
     ChevronDown,
     LogOut,
-    Key, Files, LucideListTodo, Mic, FileText, Settings,
+    Key, Files, LucideListTodo, Mic, FileText, Settings, Mail,
 } from 'lucide-react';
 import { useGlobal } from "@/lib/context/GlobalContext";
 import { createSPASassClient } from "@/lib/supabase/client";
@@ -53,6 +53,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         { name: 'My Files', href: '/app/storage', icon: Files },
         { name: 'To Do Lists', href: '/app/table', icon: LucideListTodo },
         { name: 'User Settings', href: '/app/user-settings', icon: User },
+        { name: 'Contact', href: '/contact', icon: Mail },
     ];
 
     const toggleSidebar = () => setSidebarOpen(!isSidebarOpen);
@@ -108,21 +109,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
 
             <div className="lg:pl-64">
-                <div className="sticky top-0 z-10 flex items-center justify-between h-16 bg-white shadow-sm px-4">
+                <div className="sticky top-0 z-10 flex items-center justify-between h-16 bg-[#F2FCFF] shadow-sm px-4">
                     <button
                         onClick={toggleSidebar}
                         className="lg:hidden text-gray-500 hover:text-gray-700"
                     >
                         <Menu className="h-6 w-6"/>
                     </button>
-
-                    <Link
-                        href="/app/resume-builder"
-                        className="hidden sm:flex items-center text-sm font-medium text-gray-700 hover:text-primary-600 transition-colors"
-                    >
-                        <FileText className="mr-2 h-4 w-4 text-gray-400" />
-                        Resume Builder
-                    </Link>
 
                     <div className="relative ml-auto">
                         <button

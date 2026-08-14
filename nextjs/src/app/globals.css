@@ -341,3 +341,84 @@
     @apply bg-background text-foreground;
     }
 }
+
+/* ---------------------------------------------------------------------------
+ * TipTap / ProseMirror rich-text content styling.
+ * Shared by the resume editor, privacy policy editor, and rendered views.
+ * The @tailwindcss/typography plugin powers the `prose` base; these rules
+ * ensure headings, lists, quotes, etc. are visually distinct and consistent
+ * between the editor and the final rendered page.
+ * ------------------------------------------------------------------------- */
+.tiptap,
+.ProseMirror {
+  @apply prose prose-slate max-w-none;
+}
+
+.tiptap h1,
+.ProseMirror h1 {
+  @apply text-3xl font-bold mt-8 mb-4;
+}
+.tiptap h2,
+.ProseMirror h2 {
+  @apply text-2xl font-semibold mt-6 mb-3;
+}
+.tiptap h3,
+.ProseMirror h3 {
+  @apply text-xl font-medium mt-4 mb-2;
+}
+.tiptap h4,
+.ProseMirror h4 {
+  @apply text-lg font-medium mt-4 mb-2;
+}
+.tiptap h5,
+.ProseMirror h5 {
+  @apply text-base font-semibold mt-3 mb-1;
+}
+.tiptap h6,
+.ProseMirror h6 {
+  @apply text-sm font-semibold uppercase tracking-wide mt-3 mb-1;
+}
+.tiptap p,
+.ProseMirror p {
+  @apply my-3 leading-relaxed;
+}
+.tiptap ul,
+.ProseMirror ul {
+  @apply list-disc pl-6 my-3;
+}
+.tiptap ol,
+.ProseMirror ol {
+  @apply list-decimal pl-6 my-3;
+}
+.tiptap li,
+.ProseMirror li {
+  @apply my-1;
+}
+.tiptap blockquote,
+.ProseMirror blockquote {
+  @apply border-l-4 border-gray-300 pl-4 italic my-4 text-gray-600;
+}
+.tiptap a,
+.ProseMirror a {
+  @apply text-primary-600 underline underline-offset-2 hover:text-primary-700;
+}
+.tiptap code,
+.ProseMirror code {
+  @apply bg-gray-100 text-pink-600 rounded px-1 py-0.5 text-sm;
+}
+.tiptap pre,
+.ProseMirror pre {
+  @apply bg-gray-900 text-gray-100 rounded-lg p-4 my-4 overflow-x-auto;
+}
+.tiptap pre code,
+.ProseMirror pre code {
+  @apply bg-transparent text-inherit p-0;
+}
+.tiptap hr,
+.ProseMirror hr {
+  @apply my-6 border-gray-300;
+}
+.tiptap strong,
+.ProseMirror strong {
+  @apply font-semibold;
+}

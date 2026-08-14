@@ -61,7 +61,8 @@ Supabase Backend
 4. **Implement RLS policies** — Secure data access at the database layer
 5. **Add client-side features** — Use `use client` boundaries sparingly, prefer server queries
 6. **Test & optimize** — Run queries with EXPLAIN, check indexes, measure performance
-7. **Deploy** — Push to Vercel with environment variables configured
+
+- After finishing a request and/or code modifications, DO NOT run a build unless specifically asked to
 
 ## Key Integration Points
 

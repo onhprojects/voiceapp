@@ -14,6 +14,7 @@ type User = {
 interface GlobalContextType {
     loading: boolean;
     user: User | null;  // Add this
+    isAdmin: boolean;   // Whether the current user has the 'admin' role
 }
 
 const GlobalContext = createContext<GlobalContextType | undefined>(undefined);
@@ -21,6 +22,7 @@ const GlobalContext = createContext<GlobalContextType | undefined>(undefined);
 export function GlobalProvider({ children }: { children: React.ReactNode }) {
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState<User | null>(null);  // Add this
+    const [isAdmin, setIsAdmin] = useState(false);
 
     useEffect(() => {
         async function loadData() {
@@ -36,6 +38,15 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
                         id: user.id,
                         registered_at: new Date(user.created_at)
                     });
+
+                    // Look up the user's role in user_data
+                    const { data: userData } = await client
+                        .from('user_data')
+                        .select('user_role')
+                        .eq('user_id', user.id)
+                        .maybeSingle();
+
+                    setIsAdmin(userData?.user_role === 'admin');
                 } else {
                     throw new Error('User not found');
                 }
@@ -51,7 +62,7 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     return (
-        <GlobalContext.Provider value={{ loading, user }}>
+        <GlobalContext.Provider value={{ loading, user, isAdmin }}>
             {children}
         </GlobalContext.Provider>
     );

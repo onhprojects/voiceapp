@@ -309,7 +309,7 @@ export function IntakeForm() {
               <p className="font-medium text-gray-900">
                 Progress: {recordedCount} of {totalQuestions} questions recorded
               </p>
-              <ProgressBar value={(recordedCount / totalQuestions) * 100} minWidth={75} />
+              <ProgressBar value={(recordedCount / totalQuestions) * 100} />
             </div>
             <Button onClick={exportAssessment} disabled={isExporting} className="w-full sm:w-auto">
               <Download className="h-4 w-4 mr-2" />

@@ -10,7 +10,7 @@ import {
   createPublicAssessment,
   uploadPublicAudioFile,
   savePublicIntakeResponse,
-} from '@/app/intake/actions'
+} from '@/lib/actions/intake'
 
 // The questionnaire data structure
 const QUESTIONNAIRE_DATA = [

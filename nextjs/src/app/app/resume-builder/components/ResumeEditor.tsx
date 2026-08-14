@@ -30,8 +30,7 @@ export function ResumeEditor({
     content: initialDoc,
     editorProps: {
       attributes: {
-        class:
-          'prose prose-sm sm:prose max-w-none focus:outline-none min-h-[600px] px-8 py-10',
+        class: 'focus:outline-none min-h-[600px] px-8 py-10',
       },
     },
     onUpdate: ({ editor }) => {
