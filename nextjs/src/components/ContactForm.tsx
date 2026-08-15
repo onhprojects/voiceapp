@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState } from 'react'
-import { submitContactForm } from '@/lib/actions/contact'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -24,13 +23,17 @@ export function ContactForm() {
     setError(null)
     setSuccess(false)
 
-    const result = await submitContactForm({
-      firstName,
-      lastName,
-      emailAddress,
-      phoneNumber,
-      message,
-    })
+    const result = await fetch('/api/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        firstName,
+        lastName,
+        emailAddress,
+        phoneNumber,
+        message,
+      }),
+    }).then((res) => res.json())
 
     setIsSubmitting(false)
 

@@ -57,7 +57,11 @@ export async function submitContactForm(
     userId = user.id
   }
 
-  const { data, error } = await (supabase
+  // For anonymous users there is no SELECT policy on their own submission, so
+  // adding .select() (a RETURNING clause) would make RLS reject the insert and
+  // surface as a 500 "Invalid Server Actions request." Only request the row back
+  // for authenticated users, who have an own-row SELECT policy.
+  let query = supabase
     .from('contact_submissions')
     .insert({
       first_name: firstName,
@@ -67,21 +71,33 @@ export async function submitContactForm(
       message,
       user_id: userId,
       source: 'web',
-    }))
-    .select()
-    .single()
+    })
 
-  if (error) {
-    console.error('Failed to submit contact form:', error)
-    return {
-      success: false,
-      message: 'There was a problem submitting your message. Please try again.',
+  let submission: ContactSubmission | null = null
+  if (userId) {
+    const { data, error } = await query.select().single()
+    if (error) {
+      console.error('Failed to submit contact form:', error)
+      return {
+        success: false,
+        message: 'There was a problem submitting your message. Please try again.',
+      }
+    }
+    submission = data as ContactSubmission
+  } else {
+    const { error } = await query
+    if (error) {
+      console.error('Failed to submit contact form:', error)
+      return {
+        success: false,
+        message: 'There was a problem submitting your message. Please try again.',
+      }
     }
   }
 
   return {
     success: true,
     message: 'Thank you! Your message has been sent. We will get back to you soon.',
-    submission: data as ContactSubmission,
+    submission: submission ?? undefined,
   }
 }

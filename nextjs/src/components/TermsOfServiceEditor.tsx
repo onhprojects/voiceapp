@@ -1,6 +1,6 @@
 'use client'
 
-// Privacy Policy — TipTap rich-text editor.
+// Terms of Service — TipTap rich-text editor.
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
@@ -15,7 +15,7 @@ interface Props {
   onSaved: (content: string) => void
 }
 
-export function PrivacyPolicyEditor({ initialContent, onCancel, onSaved }: Props) {
+export function TermsOfServiceEditor({ initialContent, onCancel, onSaved }: Props) {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -42,19 +42,19 @@ export function PrivacyPolicyEditor({ initialContent, onCancel, onSaved }: Props
     setError(null)
     try {
       const html = editor.getHTML()
-      const res = await fetch('/api/privacy', {
+      const res = await fetch('/api/terms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: html }),
       })
       const data = await res.json()
       if (!res.ok || !data?.success) {
-        throw new Error(data?.error || 'Failed to save privacy policy')
+        throw new Error(data?.error || 'Failed to save Terms of Service')
       }
       setSaved(true)
       onSaved(html)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save privacy policy')
+      setError(err instanceof Error ? err.message : 'Failed to save Terms of Service')
     } finally {
       setSaving(false)
     }

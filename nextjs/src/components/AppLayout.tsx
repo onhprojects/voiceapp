@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {usePathname, useRouter} from 'next/navigation';
 import {
@@ -9,7 +9,7 @@ import {
     X,
     ChevronDown,
     LogOut,
-    Key, Files, LucideListTodo, Mic, FileText, Settings, Mail,
+    Key, Files, LucideListTodo, Mic, FileText, Settings, Mail, ShieldCheck, Inbox,
 } from 'lucide-react';
 import { useGlobal } from "@/lib/context/GlobalContext";
 import { createSPASassClient } from "@/lib/supabase/client";
@@ -17,11 +17,12 @@ import { createSPASassClient } from "@/lib/supabase/client";
 export default function AppLayout({ children }: { children: React.ReactNode }) {
     const [isSidebarOpen, setSidebarOpen] = useState(false);
     const [isUserDropdownOpen, setUserDropdownOpen] = useState(false);
+    const [isAdminMenuOpen, setAdminMenuOpen] = useState(false);
     const pathname = usePathname();
     const router = useRouter();
 
 
-    const { user } = useGlobal();
+    const { user, isAdmin } = useGlobal();
 
     const handleLogout = async () => {
         try {
@@ -55,6 +56,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         { name: 'User Settings', href: '/app/user-settings', icon: User },
         { name: 'Contact', href: '/contact', icon: Mail },
     ];
+
+    // Admin submenu (only visible to admins)
+    const adminMenuItems = isAdmin
+        ? [
+            { name: 'Admin Settings', href: '/app/admin', icon: Settings },
+            { name: 'Submissions', href: '/app/admin/submissions', icon: Inbox },
+          ]
+        : [];
+
+    const isAdminPage = pathname.startsWith('/app/admin');
+
+    // Auto-open the admin submenu when on an admin page
+    useEffect(() => {
+        if (isAdminPage) {
+            setAdminMenuOpen(true);
+        }
+    }, [isAdminPage]);
 
     const toggleSidebar = () => setSidebarOpen(!isSidebarOpen);
 
@@ -104,6 +122,58 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             </Link>
                         );
                     })}
+
+                    {/* Admin section — only visible to admins */}
+                    {adminMenuItems.length > 0 && (
+                        <div className="pt-2">
+                            <button
+                                type="button"
+                                onClick={() => setAdminMenuOpen((prev) => !prev)}
+                                aria-expanded={isAdminMenuOpen}
+                                className={`w-full flex items-center justify-between px-2 py-2 text-sm font-medium rounded-md ${
+                                    isAdminPage
+                                        ? 'bg-red-100 text-red-700'
+                                        : 'bg-red-50 text-red-700 hover:bg-red-100'
+                                }`}
+                            >
+                                <span className="flex items-center">
+                                    <ShieldCheck className={`mr-3 h-5 w-5 ${isAdminPage ? 'text-red-600' : 'text-red-500'}`} />
+                                    Admin
+                                </span>
+                                <ChevronDown
+                                    className={`h-4 w-4 transition-transform duration-200 ${
+                                        isAdminMenuOpen ? 'rotate-180' : ''
+                                    }`}
+                                />
+                            </button>
+
+                            {isAdminMenuOpen && (
+                                <div className="mt-1 ml-4 border-l border-red-100 pl-2 space-y-1">
+                                    {adminMenuItems.map((item) => {
+                                        const isActive = pathname === item.href;
+                                        return (
+                                            <Link
+                                                key={item.name}
+                                                href={item.href}
+                                                className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
+                                                    isActive
+                                                        ? 'bg-red-100 text-red-700'
+                                                        : 'text-gray-600 hover:bg-red-50 hover:text-red-700'
+                                                }`}
+                                            >
+                                                <item.icon
+                                                    className={`mr-3 h-4 w-4 ${
+                                                        isActive ? 'text-red-600' : 'text-gray-400 group-hover:text-red-500'
+                                                    }`}
+                                                />
+                                                {item.name}
+                                            </Link>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </nav>
 
             </div>

@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState } from 'react'
-import { getAdminSettings, updateAdminSetting } from '@/app/admin/actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -22,8 +21,10 @@ export function AdminSettingsForm() {
   React.useEffect(() => {
     async function load() {
       try {
-        const data = await getAdminSettings()
-        setSettings(data)
+        const res = await fetch('/api/admin/settings')
+        const data = await res.json()
+        if (!res.ok) throw new Error(data?.error || 'Failed to load settings')
+        setSettings(data.settings as AdminSetting[])
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load settings')
       } finally {
@@ -44,7 +45,13 @@ export function AdminSettingsForm() {
     setSavedId(null)
     setError(null)
     try {
-      await updateAdminSetting(setting.id, setting.option_value)
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: setting.id, value: setting.option_value }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data?.success) throw new Error(data?.error || 'Failed to save setting')
       setSavedId(setting.id)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save setting')

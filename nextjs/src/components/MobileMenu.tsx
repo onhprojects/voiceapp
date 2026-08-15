@@ -1,13 +1,14 @@
 "use client";
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, ChevronDown, Shield, FileText } from 'lucide-react';
 import { createSPASassClient } from '@/lib/supabase/client';
 
 export default function MobileMenu() {
     const [isOpen, setIsOpen] = useState(false);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [legalOpen, setLegalOpen] = useState(false);
 
     useEffect(() => {
         const checkAuth = async () => {
@@ -29,7 +30,6 @@ export default function MobileMenu() {
         { href: '#features', label: 'Features' },
         { href: '#how-it-works', label: 'How it works' },
         { href: '#pricing', label: 'Pricing' },
-        { href: '/contact', label: 'Contact' },
     ];
 
     return (
@@ -57,6 +57,48 @@ export default function MobileMenu() {
                                 {link.label}
                             </Link>
                         ))}
+
+                        {/* Legal submenu */}
+                        <button
+                            type="button"
+                            onClick={() => setLegalOpen((prev) => !prev)}
+                            aria-expanded={legalOpen}
+                            className="flex w-full items-center justify-between px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                        >
+                            <span>Legal</span>
+                            <ChevronDown
+                                className={`h-4 w-4 transition-transform duration-200 ${
+                                    legalOpen ? 'rotate-180' : ''
+                                }`}
+                            />
+                        </button>
+                        {legalOpen && (
+                            <div className="ml-3 space-y-1 border-l border-gray-200 pl-3">
+                                <Link
+                                    href="/privacy"
+                                    onClick={() => setIsOpen(false)}
+                                    className="flex items-center px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                                >
+                                    <Shield className="mr-2 h-4 w-4 text-gray-400" />
+                                    Privacy Policy
+                                </Link>
+                                <Link
+                                    href="/terms"
+                                    onClick={() => setIsOpen(false)}
+                                    className="flex items-center px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                                >
+                                    <FileText className="mr-2 h-4 w-4 text-gray-400" />
+                                    Terms of Service
+                                </Link>
+                            </div>
+                        )}
+                        <Link
+                            href="/contact"
+                            onClick={() => setIsOpen(false)}
+                            className="block px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                        >
+                            Contact
+                        </Link>
                         <div className="pt-3 mt-3 border-t border-[#d8d8d8] space-y-2">
                             {loading ? null : isAuthenticated ? (
                                 <Link

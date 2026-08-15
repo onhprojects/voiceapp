@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     const doc = body.doc ?? { type: 'doc', content: [] }
     const title = body.title ?? 'resume'
 
-    const bytes = buildDocx(doc)
+    const bytes = await buildDocx(doc)
     const safeTitle = title.replace(/[^\w\s-]/g, '').replace(/\s+/g, '_') || 'resume'
 
     return new NextResponse(bytes as unknown as BodyInit, {

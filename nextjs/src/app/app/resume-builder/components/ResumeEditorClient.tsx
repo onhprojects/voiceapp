@@ -1,9 +1,9 @@
 'use client'
 
 // Resume Builder — client wrapper: autosave, export, AI panel, title editing.
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { ArrowLeft, Loader2, Save } from 'lucide-react'
 import { ResumeEditor } from './ResumeEditor'
 import { AiPanel } from './AiPanel'
 import type { ResumeDoc } from '../lib/types'
@@ -26,6 +26,7 @@ export function ResumeEditorClient({
   const [exporting, setExporting] = useState(false)
   const [saving, setSaving] = useState(false)
   const [savedAt, setSavedAt] = useState<string | null>(null)
+  const [dirty, setDirty] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const docRef = useRef(doc)
@@ -47,9 +48,10 @@ export function ResumeEditorClient({
       })
       if (!res.ok) {
         const json = await res.json().catch(() => null)
-        throw new Error(json?.error || 'Failed to save')
+        throw new Error(json?.error ?? 'Failed to save')
       }
       setSavedAt(new Date().toLocaleTimeString())
+      setDirty(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save')
     } finally {
@@ -57,13 +59,15 @@ export function ResumeEditorClient({
     }
   }, [resumeId])
 
-  // Autosave with debounce on doc changes.
-  useEffect(() => {
-    const t = setTimeout(() => {
-      save()
-    }, 1500)
-    return () => clearTimeout(t)
-  }, [doc, save])
+  function handleDocChange(next: ResumeDoc) {
+    setDoc(next)
+    setDirty(true)
+  }
+
+  function handleTitleChange(next: string) {
+    setTitle(next)
+    setDirty(true)
+  }
 
   async function handleExport() {
     setExporting(true)
@@ -103,6 +107,7 @@ export function ResumeEditorClient({
       type: 'doc',
       content: [...prev.content, ...content],
     }))
+    setDirty(true)
   }
 
   return (
@@ -118,19 +123,32 @@ export function ResumeEditorClient({
         </button>
         <input
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onBlur={() => save()}
+          onChange={(e) => handleTitleChange(e.target.value)}
           className="flex-1 font-medium text-gray-900 bg-transparent focus:outline-none focus:ring-1 focus:ring-blue-500 rounded px-2 py-1"
           placeholder="Untitled Resume"
         />
         <div className="flex items-center gap-2 text-xs text-gray-400">
+          {dirty && !saving && <span>Unsaved changes</span>}
           {saving && (
             <span className="inline-flex items-center gap-1">
               <Loader2 className="h-3 w-3 animate-spin" /> Saving…
             </span>
           )}
-          {savedAt && !saving && <span>Saved {savedAt}</span>}
+          {savedAt && !dirty && !saving && <span>Saved {savedAt}</span>}
         </div>
+        <button
+          type="button"
+          onClick={() => save()}
+          disabled={saving || !dirty}
+          className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {saving ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Save className="h-4 w-4" />
+          )}
+          Save
+        </button>
       </div>
 
       {error && (
@@ -141,7 +159,7 @@ export function ResumeEditorClient({
         <div className="flex-1 flex flex-col overflow-hidden">
           <ResumeEditor
             initialDoc={doc}
-            onDocChange={setDoc}
+            onDocChange={handleDocChange}
             onExport={handleExport}
             onOpenAi={() => setAiOpen(true)}
             exporting={exporting}

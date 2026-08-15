@@ -42,9 +42,17 @@ AS $function$
   );
 $function$;
 
--- Function to handle new user creation (inserting into user_data)
+-- Function to handle new user creation (inserting into user_data and user_settings)
+-- IMPORTANT: Must be SECURITY DEFINER so it runs as its owner (postgres), which has
+-- INSERT on the profile tables. With SECURITY INVOKER, the auth trigger fires as
+-- supabase_auth_admin, which lacks INSERT, and the EXCEPTION handler silently swallows
+-- the failure — new users would get no profile rows.
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
 DECLARE
     v_first_name text;
     v_last_name text;
@@ -58,14 +66,24 @@ BEGIN
     INSERT INTO public.user_data (user_id, first_name, last_name, email, user_role)
     VALUES (NEW.id, v_first_name, v_last_name, NEW.email, 'free');
 
+    -- Insert the new user into user_settings (email = NEW.email, works for both
+    -- email and Google signups since NEW.email is always populated by Auth)
+    INSERT INTO public.user_settings (user_id, first_name, last_name, email)
+    VALUES (NEW.id, v_first_name, v_last_name, NEW.email);
+
     RETURN NEW;
 EXCEPTION WHEN OTHERS THEN
     -- Log the error but don't fail the auth trigger
-    -- This prevents auth failures if user_data insert fails
+    -- This prevents auth failures if the profile inserts fail
     RAISE WARNING 'Error in handle_new_user: %', SQLERRM;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY INVOKER;
+$$;
+
+-- Restrict execution of handle_new_user to the roles that need it for security.
+REVOKE ALL ON FUNCTION public.handle_new_user() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.handle_new_user() TO service_role;
+GRANT EXECUTE ON FUNCTION public.handle_new_user() TO supabase_auth_admin;
 
 -- ============================================================================
 -- 3. TABLES
@@ -93,6 +111,28 @@ ALTER TABLE public.user_data
 -- Validate the constraint (safe on existing data if table is empty)
 ALTER TABLE public.user_data
     VALIDATE CONSTRAINT user_data_user_id_fkey;
+
+-- user_settings: per-user settings / profile fields
+CREATE TABLE IF NOT EXISTS public.user_settings (
+    user_id uuid NOT NULL PRIMARY KEY,
+    first_name text,
+    last_name text,
+    email text,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- Add foreign key constraint to auth.users with ON DELETE CASCADE
+ALTER TABLE public.user_settings
+    DROP CONSTRAINT IF EXISTS user_settings_user_id_fkey;
+ALTER TABLE public.user_settings
+    ADD CONSTRAINT user_settings_user_id_fkey FOREIGN KEY (user_id)
+    REFERENCES auth.users(id) ON DELETE CASCADE
+    NOT VALID;
+
+-- Validate the constraint
+ALTER TABLE public.user_settings
+    VALIDATE CONSTRAINT user_settings_user_id_fkey;
 
 -- todo_list: per-user to-do items
 CREATE TABLE IF NOT EXISTS public.todo_list (
@@ -180,6 +220,7 @@ CREATE TABLE IF NOT EXISTS public.admin_settings (
 
 -- Enable RLS on all tables
 ALTER TABLE public.user_data ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.todo_list ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.resumes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
@@ -207,6 +248,32 @@ WITH CHECK (auth.uid() = user_id);
 DROP POLICY IF EXISTS "Service role can manage all" ON public.user_data;
 CREATE POLICY "Service role can manage all"
 ON public.user_data
+FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
+
+-- ----------------------------------------------------------------------------
+-- user_settings policies
+-- ----------------------------------------------------------------------------
+DROP POLICY IF EXISTS "Users can view own settings" ON public.user_settings;
+CREATE POLICY "Users can view own settings"
+ON public.user_settings
+FOR SELECT
+TO authenticated
+USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can update own settings" ON public.user_settings;
+CREATE POLICY "Users can update own settings"
+ON public.user_settings
+FOR UPDATE
+TO authenticated
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Service role can manage all user settings" ON public.user_settings;
+CREATE POLICY "Service role can manage all user settings"
+ON public.user_settings
 FOR ALL
 TO service_role
 USING (true)
@@ -276,6 +343,39 @@ ON public.contact_submissions
 FOR SELECT
 TO authenticated
 USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Admins can view all contact submissions" ON public.contact_submissions;
+CREATE POLICY "Admins can view all contact submissions"
+ON public.contact_submissions
+FOR SELECT
+TO authenticated
+USING (
+    EXISTS (
+        SELECT 1 FROM public.user_data
+        WHERE user_data.user_id = auth.uid()
+        AND user_data.user_role = 'admin'
+    )
+);
+
+DROP POLICY IF EXISTS "Admins can update all contact submissions" ON public.contact_submissions;
+CREATE POLICY "Admins can update all contact submissions"
+ON public.contact_submissions
+FOR UPDATE
+TO authenticated
+USING (
+    EXISTS (
+        SELECT 1 FROM public.user_data
+        WHERE user_data.user_id = auth.uid()
+        AND user_data.user_role = 'admin'
+    )
+)
+WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM public.user_data
+        WHERE user_data.user_id = auth.uid()
+        AND user_data.user_role = 'admin'
+    )
+);
 
 DROP POLICY IF EXISTS "Service role can manage all contact submissions" ON public.contact_submissions;
 CREATE POLICY "Service role can manage all contact submissions"
@@ -400,6 +500,10 @@ GRANT SELECT ON public.user_data TO authenticated;
 GRANT UPDATE ON public.user_data TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.user_data TO service_role;
 
+-- user_settings
+GRANT SELECT, UPDATE ON public.user_settings TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.user_settings TO service_role;
+
 -- todo_list
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.todo_list TO anon;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.todo_list TO authenticated;
@@ -431,6 +535,9 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.admin_settings TO service_role;
 CREATE INDEX IF NOT EXISTS idx_user_data_created_at ON public.user_data(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_user_data_user_role ON public.user_data(user_role);
 
+-- user_settings
+CREATE INDEX IF NOT EXISTS idx_user_settings_created_at ON public.user_settings(created_at DESC);
+
 -- contact_submissions
 CREATE INDEX IF NOT EXISTS idx_contact_submissions_user_id ON public.contact_submissions(user_id);
 CREATE INDEX IF NOT EXISTS idx_contact_submissions_created_at ON public.contact_submissions(created_at DESC);
@@ -450,7 +557,14 @@ INSERT INTO public.admin_settings (option_name, option_value, option_field_type,
 VALUES
     ('site_title', 'Resume Builder', 'text', 'Site Title', 'The name of your site shown in the browser tab and header.'),
     ('site_tagline', 'Create your resume the easy way', 'text', 'Site Tagline', 'A short tagline shown on the homepage.'),
-    ('support_email', 'support@example.com', 'text', 'Support Email', 'The email address used for support inquiries.')
+    ('support_email', 'support@example.com', 'text', 'Support Email', 'The email address used for support inquiries.'),
+    ('company_name', 'Resume Builder', 'text', 'Company Name', 'The legal company name. Available as the [company_name] shortcode.'),
+    ('contact_address', '', 'text', 'Contact Address', 'Available as the [contact_address] shortcode.'),
+    ('support_hours', '', 'text', 'Support Hours', 'Available as the [support_hours] shortcode.'),
+    ('phone_number', '', 'text', 'Phone Number', 'Available as the [phone_number] shortcode.'),
+    ('privacy_policy', '<h1>Privacy Policy</h1><p>Last Updated: August 14, 2026</p><p>This Privacy Policy explains how [site_title] ("we", "us", or "our") collects, uses, discloses, and safeguards your information when you use our services.</p>', 'textarea', 'Privacy Policy', 'The privacy policy content shown on the /privacy page. Supports shortcodes like [site_title], [company_name], and [support_email].'),
+    ('terms_of_service', '<h1>Terms of Service</h1><p>Last Updated: August 15, 2026</p><p>Welcome to [site_title] ("we", "us", or "our"). By accessing or using our services, you agree to be bound by these Terms of Service.</p>', 'textarea', 'Terms of Service', 'The Terms of Service content shown on the /terms page. Supports shortcodes like [site_title], [company_name], and [support_email].')
+
 ON CONFLICT (option_name) DO NOTHING;
 
 -- Default OpenRouter model setting

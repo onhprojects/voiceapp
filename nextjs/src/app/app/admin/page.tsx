@@ -1,6 +1,6 @@
 import React from 'react'
 import { redirect } from 'next/navigation'
-import { isCurrentUserAdmin } from '@/app/admin/actions'
+import { isCurrentUserAdmin } from '@/app/app/admin/actions'
 import { AdminSettingsForm } from '@/components/AdminSettingsForm'
 import { Settings } from 'lucide-react'
 

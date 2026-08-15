@@ -390,6 +390,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_settings: {
+        Row: {
+          user_id: string
+          first_name: string | null
+          last_name: string | null
+          email: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          first_name?: string | null
+          last_name?: string | null
+          email?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          user_id?: string
+          first_name?: string | null
+          last_name?: string | null
+          email?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       admin_settings: {
         Row: {
           id: string

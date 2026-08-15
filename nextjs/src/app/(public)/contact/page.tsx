@@ -2,7 +2,7 @@ import React from 'react'
 import Link from 'next/link'
 import { ContactForm } from '@/components/ContactForm'
 import { Mail, Phone, MapPin } from 'lucide-react'
-import { getAdminSettingsByNames } from '@/app/admin/actions'
+import { getAdminSettingsByNames } from '@/app/app/admin/actions'
 
 export const metadata = {
   title: 'Contact Us',
