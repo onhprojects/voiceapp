@@ -106,11 +106,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <nav className="mt-4 px-2 space-y-1">
                     {navigation.map((item) => {
                         const isActive = pathname === item.href;
-                        return (onClick={closeSidebarOnSelect}
-                                
+                        return (
                             <Link
                                 key={item.name}
                                 href={item.href}
+                                onClick={closeSidebarOnSelect}
                                 className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
                                     isActive
                                         ? 'bg-primary-50 text-primary-600'
@@ -160,6 +160,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                             <Link
                                                 key={item.name}
                                                 href={item.href}
+                                                onClick={closeSidebarOnSelect}
                                                 className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
                                                     isActive
                                                         ? 'bg-red-100 text-red-700'
