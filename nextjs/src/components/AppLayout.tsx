@@ -50,7 +50,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         { name: 'Intake Assessment', href: '/app/intake', icon: Mic },
         { name: 'Audio-Text Assessment', href: '/app/audio-text-assessment', icon: Mic },
         { name: 'Resume Builder', href: '/app/resume-builder', icon: FileText },
-        { name: 'Resume Settings', href: '/app/resume-builder/admin/settings', icon: Settings },
         { name: 'My Files', href: '/app/storage', icon: Files },
         { name: 'To Do Lists', href: '/app/table', icon: LucideListTodo },
         { name: 'User Settings', href: '/app/user-settings', icon: User },
@@ -75,6 +74,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }, [isAdminPage]);
 
     const toggleSidebar = () => setSidebarOpen(!isSidebarOpen);
+
+    // Close the sidebar when a navigation item is selected (mobile only —
+    // on desktop the sidebar stays pinned open via lg:translate-x-0).
+    const closeSidebarOnSelect = () => setSidebarOpen(false);
 
     return (
         <div className="min-h-screen bg-gray-100">
@@ -103,7 +106,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <nav className="mt-4 px-2 space-y-1">
                     {navigation.map((item) => {
                         const isActive = pathname === item.href;
-                        return (
+                        return (onClick={closeSidebarOnSelect}
+                                
                             <Link
                                 key={item.name}
                                 href={item.href}
@@ -150,7 +154,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             {isAdminMenuOpen && (
                                 <div className="mt-1 ml-4 border-l border-red-100 pl-2 space-y-1">
                                     {adminMenuItems.map((item) => {
-                                        const isActive = pathname === item.href;
+                                        const isonClick={closeSidebarOnSelect}
+                                                Active = pathname === item.href;
                                         return (
                                             <Link
                                                 key={item.name}

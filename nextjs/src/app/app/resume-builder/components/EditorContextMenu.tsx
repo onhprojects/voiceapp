@@ -5,11 +5,11 @@
 // actions otherwise. Positioned at the cursor, closes on outside click/Esc.
 import { useEffect, useRef, useState } from 'react'
 import type { Editor } from '@tiptap/react'
+import { TextSelection } from '@tiptap/pm/state'
 import {
   Columns3,
   Rows3,
   Trash2,
-  Table as TableIcon,
   TableProperties,
   Bold,
   Italic,
@@ -19,6 +19,9 @@ import {
   Copy,
   Scissors,
   Strikethrough,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
 } from 'lucide-react'
 
 interface Props {
@@ -31,18 +34,32 @@ interface MenuState {
   inTable: boolean
 }
 
+/** Preset color swatches for quick access in the context menu. */
+const COLOR_SWATCHES = [
+  '#000000',
+  '#ffffff',
+  '#e11d48',
+  '#ea580c',
+  '#ca8a04',
+  '#16a34a',
+  '#2563eb',
+  '#7c3aed',
+]
+
 function Item({
   icon,
   label,
   onClick,
   disabled,
   danger,
+  active,
 }: {
   icon: React.ReactNode
   label: string
   onClick: () => void
   disabled?: boolean
   danger?: boolean
+  active?: boolean
 }) {
   return (
     <button
@@ -51,9 +68,11 @@ function Item({
       onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
       className={`w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left rounded-md transition-colors disabled:opacity-40 ${
-        danger
-          ? 'text-red-600 hover:bg-red-50'
-          : 'text-gray-700 hover:bg-gray-100'
+        active
+          ? 'bg-blue-100 text-blue-700'
+          : danger
+            ? 'text-red-600 hover:bg-red-50'
+            : 'text-gray-700 hover:bg-gray-100'
       }`}
     >
       {icon}
@@ -66,10 +85,17 @@ export function EditorContextMenu({ editor }: Props) {
   const [menu, setMenu] = useState<MenuState | null>(null)
   const ref = useRef<HTMLDivElement>(null)
 
+  // Snapshots the editor selection so opening the color picker (which steals
+  // focus) does not clear selection before setColor() runs.
+  const selectionRef = useRef<{ from: number; to: number } | null>(null)
+  const [showColor, setShowColor] = useState(false)
+
   useEffect(() => {
     if (!editor) return
 
+    // Handlers capture the editor; guard it per-call to satisfy the type checker.
     function onContextMenu(e: MouseEvent) {
+      if (!editor) return
       // Only open our menu for right-clicks inside the editor content.
       const target = e.target as HTMLElement
       const contentEl = editor.view.dom
@@ -105,8 +131,8 @@ export function EditorContextMenu({ editor }: Props) {
 
   if (!menu || !editor) return null
 
-  const isActive = (name: string, attrs?: Record<string, unknown>) =>
-    editor.isActive(name, attrs)
+  const isActive = (check: string | Record<string, unknown>) =>
+    editor.isActive(check)
 
   const close = () => setMenu(null)
 
@@ -128,6 +154,31 @@ export function EditorContextMenu({ editor }: Props) {
     else close()
   }
   const doUnlink = () => run(() => editor.chain().focus().unsetLink().run())
+
+  // Open the color sub-menu. Snapshot the selection on open so it survives the
+  // focus-stealing native color input.
+  const currentColor =
+    (editor.getAttributes('textStyle').color as string) || '#000000'
+
+  const applyColor = (color: string) => {
+    editor
+      .chain()
+      .focus()
+      .command(({ tr }) => {
+        const sel = selectionRef.current
+        if (sel && sel.from !== sel.to) {
+          tr.setSelection(TextSelection.create(tr.doc, sel.from, sel.to))
+        }
+        return true
+      })
+      .setColor(color)
+      .run()
+    selectionRef.current = null
+    setShowColor(false)
+  }
+
+  const doAlign = (align: 'left' | 'center' | 'right') =>
+    run(() => editor.chain().focus().setTextAlign(align).run())
 
   const menuStyle: React.CSSProperties = {
     position: 'fixed',
@@ -217,6 +268,88 @@ export function EditorContextMenu({ editor }: Props) {
         label="Strikethrough"
         onClick={() => editor.chain().focus().toggleStrike().run()}
       />
+
+      <div className="my-1 border-t border-gray-100" />
+
+      {/* Text alignment */}
+      <Item
+        icon={<AlignLeft className="h-4 w-4" />}
+        label="Align left"
+        active={isActive({ textAlign: 'left' })}
+        onClick={() => doAlign('left')}
+      />
+      <Item
+        icon={<AlignCenter className="h-4 w-4" />}
+        label="Align center"
+        active={isActive({ textAlign: 'center' })}
+        onClick={() => doAlign('center')}
+      />
+      <Item
+        icon={<AlignRight className="h-4 w-4" />}
+        label="Align right"
+        active={isActive({ textAlign: 'right' })}
+        onClick={() => doAlign('right')}
+      />
+
+      <div className="my-1 border-t border-gray-100" />
+
+      {/* Color */}
+      <button
+        type="button"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => {
+          selectionRef.current = {
+            from: editor.state.selection.from,
+            to: editor.state.selection.to,
+          }
+          setShowColor((v) => !v)
+        }}
+        className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left rounded-md text-gray-700 hover:bg-gray-100"
+      >
+        <span
+          className="w-4 h-4 rounded border border-gray-300 inline-block"
+          style={{ background: currentColor }}
+        />
+        Text color
+      </button>
+
+      {showColor && (
+        <div className="px-3 py-1.5">
+          <div className="flex flex-wrap gap-1.5">
+            {COLOR_SWATCHES.map((c) => (
+              <button
+                key={c}
+                type="button"
+                title={c}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => applyColor(c)}
+                className={`w-5 h-5 rounded border ${
+                  c.toLowerCase() === currentColor.toLowerCase()
+                    ? 'border-blue-500 ring-1 ring-blue-500'
+                    : 'border-gray-300'
+                }`}
+                style={{ background: c }}
+              />
+            ))}
+            <label
+              title="Custom color"
+              className="relative w-9 h-5 rounded border border-gray-300 cursor-pointer flex items-center justify-center overflow-hidden"
+              style={{ background: currentColor }}
+            >
+              <span className="text-[9px] font-bold text-white drop-shadow">
+                …
+              </span>
+              <input
+                type="color"
+                value={currentColor}
+                onMouseDown={(e) => e.preventDefault()}
+                onChange={(e) => applyColor(e.target.value)}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              />
+            </label>
+          </div>
+        </div>
+      )}
 
       <div className="my-1 border-t border-gray-100" />
 

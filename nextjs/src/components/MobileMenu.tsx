@@ -65,7 +65,7 @@ export default function MobileMenu() {
                             aria-expanded={legalOpen}
                             className="flex w-full items-center justify-between px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
                         >
-                            <span>Legal</span>
+                            <span>TOS</span>
                             <ChevronDown
                                 className={`h-4 w-4 transition-transform duration-200 ${
                                     legalOpen ? 'rotate-180' : ''
@@ -75,20 +75,20 @@ export default function MobileMenu() {
                         {legalOpen && (
                             <div className="ml-3 space-y-1 border-l border-gray-200 pl-3">
                                 <Link
-                                    href="/privacy"
-                                    onClick={() => setIsOpen(false)}
-                                    className="flex items-center px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
-                                >
-                                    <Shield className="mr-2 h-4 w-4 text-gray-400" />
-                                    Privacy Policy
-                                </Link>
-                                <Link
                                     href="/terms"
                                     onClick={() => setIsOpen(false)}
                                     className="flex items-center px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
                                 >
                                     <FileText className="mr-2 h-4 w-4 text-gray-400" />
                                     Terms of Service
+                                </Link>
+                                <Link
+                                    href="/privacy"
+                                    onClick={() => setIsOpen(false)}
+                                    className="flex items-center px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                                >
+                                    <Shield className="mr-2 h-4 w-4 text-gray-400" />
+                                    Privacy Policy
                                 </Link>
                             </div>
                         )}

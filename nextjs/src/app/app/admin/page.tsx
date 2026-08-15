@@ -1,7 +1,7 @@
 import React from 'react'
 import { redirect } from 'next/navigation'
 import { isCurrentUserAdmin } from '@/app/app/admin/actions'
-import { AdminSettingsForm } from '@/components/AdminSettingsForm'
+import { AdminSettingsTabs } from '@/components/AdminSettingsTabs'
 import { Settings } from 'lucide-react'
 
 export const metadata = {
@@ -28,7 +28,7 @@ export default async function AdminPage() {
         <p className="text-muted-foreground mb-8">
           Manage site-wide configuration options. Changes apply immediately.
         </p>
-        <AdminSettingsForm />
+        <AdminSettingsTabs />
       </div>
     </div>
   )

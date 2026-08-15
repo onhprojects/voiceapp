@@ -25,7 +25,20 @@ export default function AuthAwareButtons({ variant = 'primary' }) {
     }, []);
 
     if (loading) {
-        return null;
+        // Reserve space so the header doesn't jump while auth status loads.
+        // Show placeholder(s) sized like the buttons that will replace them.
+        return variant === 'primary' ? (
+            <div className="inline-flex">
+                <div className="inline-flex items-center px-6 py-3 rounded-lg bg-gray-100 animate-pulse">
+                    <span className="w-40 h-5 rounded bg-gray-200" />
+                </div>
+            </div>
+        ) : (
+            <div className="inline-flex items-center space-x-4">
+                <div className="h-9 w-24 rounded-lg bg-gray-100 animate-pulse" />
+                <div className="h-9 w-28 rounded-lg bg-gray-100 animate-pulse" />
+            </div>
+        );
     }
 
     // Navigation buttons for the header
