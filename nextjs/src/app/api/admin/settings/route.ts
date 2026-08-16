@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { getAdminSettings, updateAdminSetting } from '@/app/app/admin/actions'
+import { getAdminSettings, updateAdminSetting } from '@/app/(dashboard)/admin/actions'
 
 /**
  * GET /api/admin/settings

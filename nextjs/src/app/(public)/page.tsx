@@ -264,7 +264,7 @@ export default function Home() {
               </div>
             </div>
             <Link
-              href="/app/resume-builder"
+              href="/resume-builder"
               className="inline-flex items-center px-6 py-3 rounded-lg bg-primary-600 text-white font-medium hover:bg-primary-700 transition-colors"
             >
               Open Resume Builder
@@ -323,7 +323,7 @@ export default function Home() {
               <h4 className="text-sm font-semibold text-gray-900">Resources</h4>
               <ul className="mt-4 space-y-2">
                 <li>
-                  <Link href="/app/resume-builder" className="text-gray-600 hover:text-gray-900">
+                  <Link href="/resume-builder" className="text-gray-600 hover:text-gray-900">
                     Resume Builder
                   </Link>
                 </li>

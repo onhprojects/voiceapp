@@ -1,6 +1,6 @@
 import React from 'react'
 import { redirect } from 'next/navigation'
-import { isCurrentUserAdmin } from '@/app/app/admin/actions'
+import { isCurrentUserAdmin } from '@/app/(dashboard)/admin/actions'
 import { AdminSettingsTabs } from '@/components/AdminSettingsTabs'
 import { Settings } from 'lucide-react'
 
@@ -13,7 +13,7 @@ export default async function AdminPage() {
   // Only admins can view this page
   const isAdmin = await isCurrentUserAdmin()
   if (!isAdmin) {
-    redirect('/app')
+    redirect('/dashboard')
   }
 
   return (

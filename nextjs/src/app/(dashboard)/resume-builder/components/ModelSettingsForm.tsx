@@ -17,7 +17,7 @@ export function ModelSettingsForm() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch('/app/resume-builder/api/models')
+        const res = await fetch('/resume-builder/api/models')
         const json = await res.json()
         if (!res.ok) throw new Error(json.error || 'Failed to load models')
         setModels(json.models ?? [])
@@ -37,7 +37,7 @@ export function ModelSettingsForm() {
     setSaved(false)
     setError(null)
     try {
-      const saveRes = await fetch('/app/resume-builder/api/settings', {
+      const saveRes = await fetch('/resume-builder/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: selected }),

@@ -102,7 +102,7 @@ export default function MobileMenu() {
                         <div className="pt-3 mt-3 border-t border-[#d8d8d8] space-y-2">
                             {loading ? null : isAuthenticated ? (
                                 <Link
-                                    href="/app"
+                                    href="/dashboard"
                                     onClick={() => setIsOpen(false)}
                                     className="block text-center px-3 py-2 rounded-lg bg-primary-600 text-white font-medium hover:bg-primary-700 transition-colors"
                                 >

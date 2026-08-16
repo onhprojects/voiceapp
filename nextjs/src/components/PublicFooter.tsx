@@ -32,7 +32,7 @@ export default function PublicFooter() {
             <h4 className="text-sm font-semibold text-gray-900">Resources</h4>
             <ul className="mt-4 space-y-2">
               <li>
-                <Link href="/app/resume-builder" className="text-gray-600 hover:text-gray-900">
+                <Link href="/resume-builder" className="text-gray-600 hover:text-gray-900">
                   Resume Builder
                 </Link>
               </li>

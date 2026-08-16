@@ -17,7 +17,7 @@ export function TemplatePicker() {
     setError(null)
     try {
       const template = resumeTemplates.find((t) => t.id === selected)!
-      const res = await fetch('/app/resume-builder/api/resumes', {
+      const res = await fetch('/resume-builder/api/resumes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -28,7 +28,7 @@ export function TemplatePicker() {
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || 'Failed to create resume')
-      router.push(`/app/resume-builder/${json.resume.id}`)
+      router.push(`/resume-builder/${json.resume.id}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create resume')
       setCreating(false)

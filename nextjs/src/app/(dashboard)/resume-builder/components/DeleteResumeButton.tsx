@@ -13,7 +13,7 @@ export function DeleteResumeButton({ id }: { id: string }) {
     if (!confirm('Delete this resume? This cannot be undone.')) return
     setDeleting(true)
     try {
-      const res = await fetch(`/app/resume-builder/api/resumes/${id}`, {
+      const res = await fetch(`/resume-builder/api/resumes/${id}`, {
         method: 'DELETE',
       })
       if (!res.ok) {

@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { updateContactSubmissionStatus } from '@/app/app/admin/actions'
+import { updateContactSubmissionStatus } from '@/app/(dashboard)/admin/actions'
 
 /**
  * POST /api/admin/submissions

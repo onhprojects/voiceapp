@@ -34,9 +34,24 @@ export async function updateSession(request: NextRequest) {
     // IMPORTANT: DO NOT REMOVE auth.getUser()
 
     const {data: user} = await supabase.auth.getUser()
-    if (
-        (!user || !user.user) && request.nextUrl.pathname.startsWith('/app')
-    ) {
+
+    // Protected dashboard routes. These live under the (dashboard) route group,
+    // which adds no URL segment, so we match on the concrete paths explicitly.
+    const protectedPaths = [
+        '/dashboard',
+        '/intake',
+        '/audio-text-assessment',
+        '/resume-builder',
+        '/storage',
+        '/table',
+        '/user-settings',
+        '/admin',
+    ]
+    const isProtected = protectedPaths.some((p) =>
+        request.nextUrl.pathname === p || request.nextUrl.pathname.startsWith(`${p}/`)
+    )
+
+    if ((!user || !user.user) && isProtected) {
         const url = request.nextUrl.clone()
         url.pathname = '/auth/login'
         return NextResponse.redirect(url)

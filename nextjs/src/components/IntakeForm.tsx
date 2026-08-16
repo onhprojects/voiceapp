@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/button'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { Download, ChevronDown } from 'lucide-react'
-import { uploadAudioFile, uploadAudioAndSaveResponse, createAssessment } from '@/app/app/intake/actions'
+import { uploadAudioFile, uploadAudioAndSaveResponse, createAssessment } from '@/app/(dashboard)/intake/actions'
 
 // The questionnaire data structure
 const QUESTIONNAIRE_DATA = [

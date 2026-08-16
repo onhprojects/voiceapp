@@ -4,7 +4,6 @@ import { useGlobal } from '@/lib/context/GlobalContext';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import {
     CalendarDays,
-    Settings,
     Home,
     Mic,
     FileText,
@@ -55,7 +54,7 @@ export default function DashboardContent() {
                 <CardContent>
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                         <Link
-                            href="/app"
+                            href="/dashboard"
                             className="flex items-center gap-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
                         >
                             <div className="p-2 bg-primary-50 rounded-full">
@@ -68,7 +67,7 @@ export default function DashboardContent() {
                         </Link>
 
                         <Link
-                            href="/app/intake"
+                            href="/intake"
                             className="flex items-center gap-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
                         >
                             <div className="p-2 bg-primary-50 rounded-full">
@@ -81,7 +80,7 @@ export default function DashboardContent() {
                         </Link>
 
                         <Link
-                            href="/app/audio-text-assessment"
+                            href="/audio-text-assessment"
                             className="flex items-center gap-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
                         >
                             <div className="p-2 bg-primary-50 rounded-full">
@@ -94,7 +93,7 @@ export default function DashboardContent() {
                         </Link>
 
                         <Link
-                            href="/app/resume-builder"
+                            href="/resume-builder"
                             className="flex items-center gap-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
                         >
                             <div className="p-2 bg-primary-50 rounded-full">
@@ -107,7 +106,7 @@ export default function DashboardContent() {
                         </Link>
 
                         <Link
-                            href="/app/storage"
+                            href="/storage"
                             className="flex items-center gap-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
                         >
                             <div className="p-2 bg-primary-50 rounded-full">
@@ -120,7 +119,7 @@ export default function DashboardContent() {
                         </Link>
 
                         <Link
-                            href="/app/table"
+                            href="/table"
                             className="flex items-center gap-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
                         >
                             <div className="p-2 bg-primary-50 rounded-full">
@@ -133,7 +132,7 @@ export default function DashboardContent() {
                         </Link>
 
                         <Link
-                            href="/app/user-settings"
+                            href="/user-settings"
                             className="flex items-center gap-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
                         >
                             <div className="p-2 bg-primary-50 rounded-full">

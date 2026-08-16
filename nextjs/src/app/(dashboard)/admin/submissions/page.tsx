@@ -1,6 +1,6 @@
 import React from 'react'
 import { redirect } from 'next/navigation'
-import { isCurrentUserAdmin, getContactSubmissions } from '@/app/app/admin/actions'
+import { isCurrentUserAdmin, getContactSubmissions } from '@/app/(dashboard)/admin/actions'
 import { SubmissionsTable } from '@/components/SubmissionsTable'
 import { Inbox } from 'lucide-react'
 
@@ -13,7 +13,7 @@ export default async function SubmissionsPage() {
   // Only admins can view this page
   const isAdmin = await isCurrentUserAdmin()
   if (!isAdmin) {
-    redirect('/app')
+    redirect('/dashboard')
   }
 
   // Fetch all submissions (admin-only server action)

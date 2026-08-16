@@ -38,7 +38,7 @@ export function ResumeEditorClient({
     setSaving(true)
     setError(null)
     try {
-      const res = await fetch(`/app/resume-builder/api/resumes/${resumeId}`, {
+      const res = await fetch(`/resume-builder/api/resumes/${resumeId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -73,7 +73,7 @@ export function ResumeEditorClient({
     setExporting(true)
     setError(null)
     try {
-      const res = await fetch('/app/resume-builder/api/export', {
+      const res = await fetch('/resume-builder/api/export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ doc: docRef.current, title: titleRef.current }),
@@ -115,7 +115,7 @@ export function ResumeEditorClient({
       <div className="flex items-center gap-3 px-4 py-2 border-b border-gray-200 bg-white">
         <button
           type="button"
-          onClick={() => router.push('/app/resume-builder')}
+          onClick={() => router.push('/resume-builder')}
           className="p-1.5 rounded-md text-gray-500 hover:bg-gray-100"
           title="Back"
         >

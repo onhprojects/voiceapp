@@ -1,6 +1,6 @@
 import React from 'react'
 import { getPrivacySettings } from '@/lib/actions/privacy'
-import { isCurrentUserAdmin } from '@/app/app/admin/actions'
+import { isCurrentUserAdmin } from '@/app/(dashboard)/admin/actions'
 import { PrivacyPolicyView } from '@/components/PrivacyPolicyView'
 import { Shield } from 'lucide-react'
 

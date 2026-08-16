@@ -33,7 +33,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         }
     };
     const handleChangePassword = async () => {
-        router.push('/app/user-settings')
+        router.push('/user-settings')
     };
 
     const getInitials = (email: string) => {
@@ -46,25 +46,25 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const productName = process.env.NEXT_PUBLIC_PRODUCTNAME;
 
     const navigation = [
-        { name: 'Home', href: '/app', icon: Home },
-        { name: 'Intake Assessment', href: '/app/intake', icon: Mic },
-        { name: 'Audio-Text Assessment', href: '/app/audio-text-assessment', icon: Mic },
-        { name: 'Resume Builder', href: '/app/resume-builder', icon: FileText },
-        { name: 'My Files', href: '/app/storage', icon: Files },
-        { name: 'To Do Lists', href: '/app/table', icon: LucideListTodo },
-        { name: 'User Settings', href: '/app/user-settings', icon: User },
+        { name: 'Home', href: '/dashboard', icon: Home },
+        { name: 'Intake Assessment', href: '/intake', icon: Mic },
+        { name: 'Audio-Text Assessment', href: '/audio-text-assessment', icon: Mic },
+        { name: 'Resume Builder', href: '/resume-builder', icon: FileText },
+        { name: 'My Files', href: '/storage', icon: Files },
+        { name: 'To Do Lists', href: '/table', icon: LucideListTodo },
+        { name: 'User Settings', href: '/user-settings', icon: User },
         { name: 'Contact', href: '/contact', icon: Mail },
     ];
 
     // Admin submenu (only visible to admins)
     const adminMenuItems = isAdmin
         ? [
-            { name: 'Admin Settings', href: '/app/admin', icon: Settings },
-            { name: 'Submissions', href: '/app/admin/submissions', icon: Inbox },
+            { name: 'Admin Settings', href: '/admin', icon: Settings },
+            { name: 'Submissions', href: '/admin/submissions', icon: Inbox },
           ]
         : [];
 
-    const isAdminPage = pathname.startsWith('/app/admin');
+    const isAdminPage = pathname.startsWith('/admin');
 
     // Auto-open the admin submenu when on an admin page
     useEffect(() => {
@@ -154,8 +154,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             {isAdminMenuOpen && (
                                 <div className="mt-1 ml-4 border-l border-red-100 pl-2 space-y-1">
                                     {adminMenuItems.map((item) => {
-                                        const isonClick={closeSidebarOnSelect}
-                                                Active = pathname === item.href;
+                                        const isActive = pathname === item.href;
                                         return (
                                             <Link
                                                 key={item.name}

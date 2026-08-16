@@ -19,7 +19,7 @@ export default async function ResumeBuilderPage() {
           </p>
         </div>
         <Link
-          href="/app/resume-builder/new"
+          href="/resume-builder/new"
           className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-blue-600 text-white font-medium hover:bg-blue-700"
         >
           <Plus className="h-4 w-4" />
@@ -32,7 +32,7 @@ export default async function ResumeBuilderPage() {
           <FileText className="h-10 w-10 mx-auto text-gray-300" />
           <p className="mt-3 text-gray-500">No resumes yet.</p>
           <Link
-            href="/app/resume-builder/new"
+            href="/resume-builder/new"
             className="mt-3 inline-block text-blue-600 font-medium hover:underline"
           >
             Create your first resume
@@ -46,7 +46,7 @@ export default async function ResumeBuilderPage() {
               className="group relative rounded-lg border border-gray-200 p-4 hover:border-blue-300 hover:shadow-sm transition-all"
             >
               <Link
-                href={`/app/resume-builder/${resume.id}`}
+                href={`/resume-builder/${resume.id}`}
                 className="block"
               >
                 <div className="flex items-center gap-2">

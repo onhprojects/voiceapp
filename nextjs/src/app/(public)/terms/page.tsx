@@ -1,6 +1,6 @@
 import React from 'react'
 import { getTermsSettings } from '@/lib/actions/terms'
-import { isCurrentUserAdmin } from '@/app/app/admin/actions'
+import { isCurrentUserAdmin } from '@/app/(dashboard)/admin/actions'
 import { TermsOfServiceView } from '@/components/TermsOfServiceView'
 import { FileText } from 'lucide-react'
 

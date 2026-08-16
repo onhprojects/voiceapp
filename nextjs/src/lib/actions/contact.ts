@@ -61,7 +61,7 @@ export async function submitContactForm(
   // adding .select() (a RETURNING clause) would make RLS reject the insert and
   // surface as a 500 "Invalid Server Actions request." Only request the row back
   // for authenticated users, who have an own-row SELECT policy.
-  let query = supabase
+  const query = supabase
     .from('contact_submissions')
     .insert({
       first_name: firstName,

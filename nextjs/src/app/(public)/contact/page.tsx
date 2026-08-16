@@ -2,7 +2,7 @@ import React from 'react'
 import Link from 'next/link'
 import { ContactForm } from '@/components/ContactForm'
 import { Mail, Phone, MapPin } from 'lucide-react'
-import { getAdminSettingsByNames } from '@/app/app/admin/actions'
+import { getAdminSettingsByNames } from '@/app/(dashboard)/admin/actions'
 
 export const metadata = {
   title: 'Contact Us',
@@ -81,7 +81,7 @@ export default async function ContactPage() {
                 <p className="mt-1 text-sm text-gray-600">
                   {contactAddress}
                 </p>
-                <Link href="/app" className="mt-2 inline-block text-sm font-medium text-primary-600">
+                <Link href="/dashboard" className="mt-2 inline-block text-sm font-medium text-primary-600">
                   Explore our product →
                 </Link>
               </div>
