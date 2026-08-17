@@ -514,10 +514,9 @@ export function AudioTextAssessmentForm() {
                   </p>
                 )}
                 <p className="text-xs text-gray-500">
-                  {Math.round((recordedCount / totalQuestions) * 100)}% recorded
-                  {textAssessmentId ? ` · ${Math.round((answeredCount / totalQuestions) * 100)}% answered` : ''}
+                  {Math.round((answeredCount / totalQuestions) * 100)}% answered
                 </p>
-                <ProgressBar value={(recordedCount / totalQuestions) * 100} />
+                <ProgressBar value={(answeredCount / totalQuestions) * 100} />
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <Button
