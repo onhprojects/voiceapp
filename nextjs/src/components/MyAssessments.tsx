@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useTransition } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Pencil, Trash2, Loader2, FileText, Calendar } from 'lucide-react'
 import {
@@ -88,11 +89,16 @@ export function MyAssessments({ assessments }: { assessments: TextAssessment[] }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-gray-900">My Assessments</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          All your intake assessments. You can rename or delete any of them.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">My Assessments</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            All your intake assessments. You can rename or delete any of them.
+          </p>
+        </div>
+        <Button asChild>
+          <Link href="/audio-text-assessment">Create Assessment</Link>
+        </Button>
       </div>
 
       {error && (

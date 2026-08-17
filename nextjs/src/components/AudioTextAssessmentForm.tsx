@@ -498,7 +498,7 @@ export function AudioTextAssessmentForm() {
       {/* Header Card */}
       <Card>
         <CardHeader>
-          <CardTitle>Audio & Text Assessment Questionnaire</CardTitle>
+          <CardTitle>Intake Assessment Questionnaire</CardTitle>
           <CardDescription>
             Record responses with automatic transcription, or type answers directly. All data is securely saved.
           </CardDescription>
