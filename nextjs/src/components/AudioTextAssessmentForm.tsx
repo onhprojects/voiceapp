@@ -508,12 +508,9 @@ export function AudioTextAssessmentForm() {
             {/* Top row: progress + action buttons */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="text-sm text-gray-600">
-                <p className="font-medium text-gray-900">
-                  Audio: {recordedCount} of {totalQuestions} recorded
-                </p>
                 {textAssessmentId && (
                   <p className="font-medium text-gray-900">
-                    Text: {answeredCount} of {totalQuestions} answered
+                    {answeredCount} of {totalQuestions} answered
                   </p>
                 )}
                 <p className="text-xs text-gray-500">
@@ -693,10 +690,7 @@ export function AudioTextAssessmentForm() {
           <CardContent className="pt-6">
             <div className="text-center space-y-2">
               <p className="text-lg font-semibold text-gray-900">
-                Audio: {recordedCount} of {totalQuestions} recorded
-              </p>
-              <p className="text-lg font-semibold text-gray-900">
-                Text: {answeredCount} of {totalQuestions} answered
+                {answeredCount} of {totalQuestions} answered
               </p>
               <p className="text-sm text-gray-600">
                 {recordedCount === totalQuestions
