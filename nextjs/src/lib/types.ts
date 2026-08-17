@@ -237,6 +237,66 @@ export type Database = {
         }
         Relationships: []
       }
+      text_assessments: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      text_assessment_answers: {
+        Row: {
+          id: string
+          assessment_id: string
+          question_number: number
+          question_text: string
+          section_title: string
+          section_index: number
+          answer_text: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          assessment_id: string
+          question_number: number
+          question_text: string
+          section_title: string
+          section_index?: number
+          answer_text?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          assessment_id?: string
+          question_number?: number
+          question_text?: string
+          section_title?: string
+          section_index?: number
+          answer_text?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       todo_list: {
         Row: {
           created_at: string

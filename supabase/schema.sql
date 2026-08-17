@@ -214,9 +214,55 @@ CREATE TABLE IF NOT EXISTS public.admin_settings (
     updated_at timestamptz NOT NULL DEFAULT now()
 );
 
+-- text_assessments: named text-only assessment sessions
+CREATE TABLE IF NOT EXISTS public.text_assessments (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id uuid NOT NULL,
+    name text NOT NULL DEFAULT 'Untitled Assessment',
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.text_assessments
+    DROP CONSTRAINT IF EXISTS text_assessments_user_id_fkey;
+ALTER TABLE public.text_assessments
+    ADD CONSTRAINT text_assessments_user_id_fkey FOREIGN KEY (user_id)
+    REFERENCES auth.users(id) ON DELETE CASCADE NOT VALID;
+ALTER TABLE public.text_assessments
+    VALIDATE CONSTRAINT text_assessments_user_id_fkey;
+
+-- text_assessment_answers: individual text answers within an assessment
+CREATE TABLE IF NOT EXISTS public.text_assessment_answers (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    assessment_id uuid NOT NULL,
+    question_number integer NOT NULL,
+    question_text text NOT NULL,
+    section_title text NOT NULL,
+    section_index integer NOT NULL DEFAULT 0,
+    answer_text text NOT NULL DEFAULT '',
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.text_assessment_answers
+    DROP CONSTRAINT IF EXISTS text_assessment_answers_assessment_id_fkey;
+ALTER TABLE public.text_assessment_answers
+    ADD CONSTRAINT text_assessment_answers_assessment_id_fkey FOREIGN KEY (assessment_id)
+    REFERENCES public.text_assessments(id) ON DELETE CASCADE NOT VALID;
+ALTER TABLE public.text_assessment_answers
+    VALIDATE CONSTRAINT text_assessment_answers_assessment_id_fkey;
+
+ALTER TABLE public.text_assessment_answers
+    DROP CONSTRAINT IF EXISTS text_assessment_answers_assessment_id_question_number_key;
+ALTER TABLE public.text_assessment_answers
+    ADD CONSTRAINT text_assessment_answers_assessment_id_question_number_key UNIQUE (assessment_id, question_number);
+
 -- ============================================================================
 -- 4. ROW LEVEL SECURITY
 -- ============================================================================
+
+ALTER TABLE public.text_assessments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.text_assessment_answers ENABLE ROW LEVEL SECURITY;
 
 -- Enable RLS on all tables
 ALTER TABLE public.user_data ENABLE ROW LEVEL SECURITY;
@@ -327,6 +373,52 @@ FOR SELECT
 TO authenticated
 USING (true);
 
+DROP POLICY IF EXISTS "Admins can insert app_settings" ON public.app_settings;
+CREATE POLICY "Admins can insert app_settings"
+ON public.app_settings
+FOR INSERT
+TO authenticated
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM public.user_data
+    WHERE user_data.user_id = auth.uid()
+      AND user_data.user_role = 'admin'
+  )
+);
+
+DROP POLICY IF EXISTS "Admins can update app_settings" ON public.app_settings;
+CREATE POLICY "Admins can update app_settings"
+ON public.app_settings
+FOR UPDATE
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.user_data
+    WHERE user_data.user_id = auth.uid()
+      AND user_data.user_role = 'admin'
+  )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM public.user_data
+    WHERE user_data.user_id = auth.uid()
+      AND user_data.user_role = 'admin'
+  )
+);
+
+DROP POLICY IF EXISTS "Admins can delete app_settings" ON public.app_settings;
+CREATE POLICY "Admins can delete app_settings"
+ON public.app_settings
+FOR DELETE
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.user_data
+    WHERE user_data.user_id = auth.uid()
+      AND user_data.user_role = 'admin'
+  )
+);
+
 -- ----------------------------------------------------------------------------
 -- contact_submissions policies
 -- ----------------------------------------------------------------------------
@@ -384,6 +476,92 @@ FOR ALL
 TO service_role
 USING (true)
 WITH CHECK (true);
+
+-- ----------------------------------------------------------------------------
+-- text_assessments policies
+-- ----------------------------------------------------------------------------
+DROP POLICY IF EXISTS "Users can view own text assessments" ON public.text_assessments;
+CREATE POLICY "Users can view own text assessments"
+ON public.text_assessments FOR SELECT TO authenticated
+USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can create own text assessments" ON public.text_assessments;
+CREATE POLICY "Users can create own text assessments"
+ON public.text_assessments FOR INSERT TO authenticated
+WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can update own text assessments" ON public.text_assessments;
+CREATE POLICY "Users can update own text assessments"
+ON public.text_assessments FOR UPDATE TO authenticated
+USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can delete own text assessments" ON public.text_assessments;
+CREATE POLICY "Users can delete own text assessments"
+ON public.text_assessments FOR DELETE TO authenticated
+USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Service role can manage all text assessments" ON public.text_assessments;
+CREATE POLICY "Service role can manage all text assessments"
+ON public.text_assessments FOR ALL TO service_role
+USING (true) WITH CHECK (true);
+
+-- ----------------------------------------------------------------------------
+-- text_assessment_answers policies
+-- ----------------------------------------------------------------------------
+DROP POLICY IF EXISTS "Users can view own text assessment answers" ON public.text_assessment_answers;
+CREATE POLICY "Users can view own text assessment answers"
+ON public.text_assessment_answers FOR SELECT TO authenticated
+USING (
+    EXISTS (
+        SELECT 1 FROM public.text_assessments
+        WHERE text_assessments.id = text_assessment_answers.assessment_id
+        AND text_assessments.user_id = auth.uid()
+    )
+);
+
+DROP POLICY IF EXISTS "Users can insert own text assessment answers" ON public.text_assessment_answers;
+CREATE POLICY "Users can insert own text assessment answers"
+ON public.text_assessment_answers FOR INSERT TO authenticated
+WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM public.text_assessments
+        WHERE text_assessments.id = text_assessment_answers.assessment_id
+        AND text_assessments.user_id = auth.uid()
+    )
+);
+
+DROP POLICY IF EXISTS "Users can update own text assessment answers" ON public.text_assessment_answers;
+CREATE POLICY "Users can update own text assessment answers"
+ON public.text_assessment_answers FOR UPDATE TO authenticated
+USING (
+    EXISTS (
+        SELECT 1 FROM public.text_assessments
+        WHERE text_assessments.id = text_assessment_answers.assessment_id
+        AND text_assessments.user_id = auth.uid()
+    )
+) WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM public.text_assessments
+        WHERE text_assessments.id = text_assessment_answers.assessment_id
+        AND text_assessments.user_id = auth.uid()
+    )
+);
+
+DROP POLICY IF EXISTS "Users can delete own text assessment answers" ON public.text_assessment_answers;
+CREATE POLICY "Users can delete own text assessment answers"
+ON public.text_assessment_answers FOR DELETE TO authenticated
+USING (
+    EXISTS (
+        SELECT 1 FROM public.text_assessments
+        WHERE text_assessments.id = text_assessment_answers.assessment_id
+        AND text_assessments.user_id = auth.uid()
+    )
+);
+
+DROP POLICY IF EXISTS "Service role can manage all text assessment answers" ON public.text_assessment_answers;
+CREATE POLICY "Service role can manage all text assessment answers"
+ON public.text_assessment_answers FOR ALL TO service_role
+USING (true) WITH CHECK (true);
 
 -- ----------------------------------------------------------------------------
 -- admin_settings policies
@@ -527,6 +705,14 @@ GRANT SELECT ON public.admin_settings TO anon;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.admin_settings TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.admin_settings TO service_role;
 
+-- text_assessments
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.text_assessments TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.text_assessments TO service_role;
+
+-- text_assessment_answers
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.text_assessment_answers TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.text_assessment_answers TO service_role;
+
 -- ============================================================================
 -- 9. INDEXES
 -- ============================================================================
@@ -547,6 +733,13 @@ CREATE INDEX IF NOT EXISTS idx_contact_submissions_email_address ON public.conta
 -- admin_settings
 CREATE INDEX IF NOT EXISTS idx_admin_settings_option_name ON public.admin_settings(option_name);
 CREATE INDEX IF NOT EXISTS idx_admin_settings_created_at ON public.admin_settings(created_at DESC);
+
+-- text_assessments
+CREATE INDEX IF NOT EXISTS idx_text_assessments_user_id ON public.text_assessments(user_id);
+CREATE INDEX IF NOT EXISTS idx_text_assessments_created_at ON public.text_assessments(created_at DESC);
+
+-- text_assessment_answers
+CREATE INDEX IF NOT EXISTS idx_text_assessment_answers_assessment_id ON public.text_assessment_answers(assessment_id);
 
 -- ============================================================================
 -- 10. SEED DATA

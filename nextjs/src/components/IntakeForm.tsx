@@ -6,7 +6,11 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/button'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { Download, ChevronDown } from 'lucide-react'
-import { uploadAudioFile, uploadAudioAndSaveResponse, createAssessment } from '@/app/(dashboard)/intake/actions'
+
+// ASSESSMENT FLOW NOTE:
+// Intake recordings are saved through API routes (same pattern as the resume
+// builder and the audio-text-assessment page) to avoid the
+// "Invalid Server Actions request" issue.
 
 // The questionnaire data structure
 const QUESTIONNAIRE_DATA = [
@@ -175,10 +179,16 @@ export function IntakeForm() {
     if (assessmentId) return assessmentId
 
     try {
-      const assessment = await createAssessment({
-        sectionIndex: 0,
-        sectionTitle: 'Intake Assessment',
+      const res = await fetch('/intake/api/assessments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sectionIndex: 0,
+          sectionTitle: 'Intake Assessment',
+        }),
       })
+      if (!res.ok) throw new Error('Failed to create')
+      const { assessment } = await res.json()
       setAssessmentId(assessment.id)
       return assessment.id
     } catch (error) {
@@ -207,17 +217,19 @@ export function IntakeForm() {
       setUploadingQuestions((prev) => new Set([...prev, questionNumber]))
 
       try {
-        // Upload audio file
-        const filePath = await uploadAudioFile(currentAssessmentId, questionNumber, blob)
+        // Upload audio file + save response record via API route
+        const formData = new FormData()
+        formData.append('audio', blob, `q${questionNumber}.webm`)
+        formData.append('questionNumber', String(questionNumber))
+        formData.append('questionText', questionText)
+        formData.append('sectionTitle', sectionTitle)
+        formData.append('durationSeconds', String(duration))
 
-        // Save response record
-        await uploadAudioAndSaveResponse(currentAssessmentId, {
-          questionNumber,
-          questionText,
-          sectionTitle,
-          audioFilePath: filePath,
-          durationSeconds: duration,
-        })
+        const res = await fetch(
+          `/intake/api/assessments/${currentAssessmentId}/responses`,
+          { method: 'POST', body: formData }
+        )
+        if (!res.ok) throw new Error('Failed to save recording')
 
         // Mark as recorded
         setRecordedQuestions((prev) => new Set([...prev, questionNumber]))

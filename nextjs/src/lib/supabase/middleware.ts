@@ -41,6 +41,7 @@ export async function updateSession(request: NextRequest) {
         '/dashboard',
         '/intake',
         '/audio-text-assessment',
+        '/my-assessments',
         '/resume-builder',
         '/storage',
         '/table',

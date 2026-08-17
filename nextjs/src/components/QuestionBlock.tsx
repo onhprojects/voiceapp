@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState } from 'react'
-import { AudioRecorder } from './AudioRecorder'
+import React, { useState, useRef } from 'react'
+import { AudioRecorder, type AudioRecorderHandle } from './AudioRecorder'
 import { CheckCircle2 } from 'lucide-react'
 
 interface QuestionBlockProps {
@@ -13,24 +13,28 @@ interface QuestionBlockProps {
   isUploading?: boolean
   transcript?: string
   onTranscriptChange?: (questionNumber: number, text: string) => void
+  isSaving?: boolean
   storageFolder?: string
 }
 
 export function QuestionBlock({
   questionNumber,
   questionText,
-  sectionTitle = 'Assessment',
   isRecorded,
-  onRecordingComplete,
-  isUploading = false,
   transcript = '',
   onTranscriptChange,
-  storageFolder = 'intake-audio',
+  isSaving = false,
 }: QuestionBlockProps) {
   const [showRecorder, setShowRecorder] = useState(false)
-  // storageFolder is reserved for future use with multi-bucket support
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _storageFolder = storageFolder
+  const recorderRef = useRef<AudioRecorderHandle>(null)
+
+  // Trigger mic access + recording synchronously within the click's user gesture
+  const handleStartTextToSpeech = () => {
+    setShowRecorder(true)
+    // Recorder is already mounted (hidden) so we can start it synchronously here,
+    // keeping the browser's user activation so mic/speech recognition work.
+    recorderRef.current?.start()
+  }
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 space-y-4">
@@ -58,27 +62,23 @@ export function QuestionBlock({
         <div className="md:w-1/5 flex flex-col gap-2">
           {!showRecorder && !isRecorded && (
             <button
-              onClick={() => setShowRecorder(true)}
+              onClick={handleStartTextToSpeech}
               className="py-2 px-4 text-sm font-medium text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-colors border border-primary-200"
             >
-              + Record Answer
+              + Text to Speech
             </button>
           )}
 
-          {showRecorder && !isRecorded && (
-            <AudioRecorder
-              onRecordingComplete={(blob, duration, transcript) => {
-                onTranscriptChange?.(questionNumber, transcript)
-                onRecordingComplete(questionNumber, questionText, sectionTitle, blob, duration, transcript)
-                setShowRecorder(false)
-              }}
-            />
-          )}
-
-          {isUploading && (
-            <div className="flex items-center gap-2 text-sm text-primary-600">
-              <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-600 border-t-transparent" />
-              Uploading...
+          {!isRecorded && (
+            <div className={showRecorder ? '' : 'hidden'}>
+              <AudioRecorder
+                ref={recorderRef}
+                onRecordingComplete={(blob, duration, transcript) => {
+                  // Only insert the transcribed text — audio files are no longer saved
+                  onTranscriptChange?.(questionNumber, transcript)
+                  setShowRecorder(false)
+                }}
+              />
             </div>
           )}
         </div>
@@ -86,13 +86,21 @@ export function QuestionBlock({
         {/* Right column: textarea (shown by default when editable) */}
         {onTranscriptChange && (
           <div className="md:flex-1 min-w-[80%] space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              My Answer
-            </label>
+            <div className="flex items-center gap-2">
+              <label className="block text-sm font-medium text-gray-700">
+                My Answer
+              </label>
+              {isSaving && (
+                <span className="text-xs text-gray-400 flex items-center gap-1">
+                  <div className="animate-spin rounded-full h-3 w-3 border border-gray-300 border-t-primary-500" />
+                  Saving...
+                </span>
+              )}
+            </div>
             <textarea
               value={transcript}
               onChange={(e) => onTranscriptChange(questionNumber, e.target.value)}
-              placeholder="Your transcribed response will appear here (or type manually)..."
+              placeholder="Type your answer here..."
               className="w-full min-h-20 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>

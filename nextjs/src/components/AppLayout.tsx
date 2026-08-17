@@ -9,7 +9,7 @@ import {
     X,
     ChevronDown,
     LogOut,
-    Key, Files, LucideListTodo, Mic, FileText, Settings, Mail, ShieldCheck, Inbox,
+    Key, Files, LucideListTodo, Mic, FileText, Settings, Mail, ShieldCheck, Inbox, ClipboardList,
 } from 'lucide-react';
 import { useGlobal } from "@/lib/context/GlobalContext";
 import { createSPASassClient } from "@/lib/supabase/client";
@@ -47,8 +47,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     const navigation = [
         { name: 'Home', href: '/dashboard', icon: Home },
-        { name: 'Intake Assessment', href: '/intake', icon: Mic },
-        { name: 'Audio-Text Assessment', href: '/audio-text-assessment', icon: Mic },
+        { name: 'Intake Assessment', href: '/audio-text-assessment', icon: Mic },
+        { name: 'My Assessments', href: '/my-assessments', icon: ClipboardList },
         { name: 'Resume Builder', href: '/resume-builder', icon: FileText },
         { name: 'My Files', href: '/storage', icon: Files },
         { name: 'To Do Lists', href: '/table', icon: LucideListTodo },

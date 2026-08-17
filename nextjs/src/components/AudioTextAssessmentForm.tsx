@@ -1,12 +1,23 @@
 'use client'
 
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { QuestionBlock } from './QuestionBlock'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { ProgressBar } from '@/components/ui/ProgressBar'
-import { Download, ChevronDown } from 'lucide-react'
-import { uploadAudioFile, uploadAudioAndSaveResponse, createAssessment } from '@/app/(dashboard)/audio-text-assessment/actions'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Download, ChevronDown, Plus, Loader2 } from 'lucide-react'
+
+// Text assessment uses API routes (same pattern as resume builder)
+// to avoid the "Invalid Server Actions request" issue.
 
 // The questionnaire data structure
 const QUESTIONNAIRE_DATA = [
@@ -167,18 +178,184 @@ export function AudioTextAssessmentForm() {
   const [isExporting, setIsExporting] = useState(false)
   const [transcripts, setTranscripts] = useState<Record<number, string>>({})
 
+  // Text assessment state
+  const [textAssessmentId, setTextAssessmentId] = useState<string | null>(null)
+  const [textAssessmentName, setTextAssessmentName] = useState('')
+  const [showNewAssessmentDialog, setShowNewAssessmentDialog] = useState(false)
+  const [isCreatingAssessment, setIsCreatingAssessment] = useState(false)
+  const [answeredQuestions, setAnsweredQuestions] = useState<Set<number>>(new Set())
+  const [savingQuestions, setSavingQuestions] = useState<Set<number>>(new Set())
+  const [assessmentsList, setAssessmentsList] = useState<Array<{ id: string; name: string; created_at: string }>>([])
+  const [loadingAssessments, setLoadingAssessments] = useState(false)
+  const saveTimersRef = useRef<Record<number, NodeJS.Timeout>>({})
+
   const totalQuestions = QUESTIONNAIRE_DATA.reduce((sum, section) => sum + section.questions.length, 0)
   const recordedCount = recordedQuestions.size
+  const answeredCount = answeredQuestions.size
+
+  // ── Text Assessment Functions (API routes) ───────────────────────────
+
+  const loadAssessments = useCallback(async () => {
+    setLoadingAssessments(true)
+    try {
+      const res = await fetch('/audio-text-assessment/api/text-assessments')
+      if (!res.ok) throw new Error('Failed to load')
+      const { assessments } = await res.json()
+      setAssessmentsList(assessments.map((a: { id: string; name: string; created_at: string }) => ({
+        id: a.id,
+        name: a.name,
+        created_at: a.created_at,
+      })))
+    } catch (error) {
+      console.error('Failed to load assessments:', error)
+    } finally {
+      setLoadingAssessments(false)
+    }
+  }, [])
+
+  // Load existing assessments on mount
+  useEffect(() => {
+    loadAssessments()
+  }, [loadAssessments])
+
+  const handleCreateAssessment = useCallback(async () => {
+    const trimmed = textAssessmentName.trim()
+    if (!trimmed) return
+
+    setIsCreatingAssessment(true)
+    try {
+      const res = await fetch('/audio-text-assessment/api/text-assessments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: trimmed }),
+      })
+      if (!res.ok) throw new Error('Failed to create')
+      const { assessment } = await res.json()
+      setTextAssessmentId(assessment.id)
+      setTextAssessmentName('')
+      setShowNewAssessmentDialog(false)
+      // A brand-new assessment is blank: clear all text fields and answered
+      // state immediately so no answers carry over from the previous assessment.
+      setTranscripts({})
+      setAnsweredQuestions(new Set())
+      // Pre-populate the answered questions set for this assessment (will be empty
+      // for a new assessment; ensures answers are blank in the DB too).
+      const ansRes = await fetch(`/audio-text-assessment/api/text-assessments/${assessment.id}/answers`)
+      if (ansRes.ok) {
+        const { answers } = await ansRes.json()
+        const answered = new Set<number>()
+        const transcriptMap: Record<number, string> = {}
+        for (const answer of answers) {
+          answered.add(answer.question_number)
+          transcriptMap[answer.question_number] = answer.answer_text
+        }
+        // Replace (not merge) so stale answers from a previous assessment never persist.
+        setAnsweredQuestions(answered)
+        setTranscripts(transcriptMap)
+      }
+      await loadAssessments()
+    } catch (error) {
+      console.error('Failed to create assessment:', error)
+      alert('Failed to create assessment. Please try again.')
+    } finally {
+      setIsCreatingAssessment(false)
+    }
+  }, [textAssessmentName, loadAssessments])
+
+  const handleSelectAssessment = useCallback(async (assessmentId: string) => {
+    setTextAssessmentId(assessmentId)
+    try {
+      const res = await fetch(`/audio-text-assessment/api/text-assessments/${assessmentId}/answers`)
+      if (!res.ok) throw new Error('Failed to load answers')
+      const { answers } = await res.json()
+      const answered = new Set<number>()
+      const transcriptMap: Record<number, string> = {}
+      for (const answer of answers) {
+        answered.add(answer.question_number)
+        transcriptMap[answer.question_number] = answer.answer_text
+      }
+      // Replace (not merge) so answers from a previously selected assessment
+      // don't bleed into the newly selected one.
+      setAnsweredQuestions(answered)
+      setTranscripts(transcriptMap)
+    } catch (error) {
+      console.error('Failed to load assessment answers:', error)
+      // If loading fails, clear the fields so stale answers aren't shown.
+      setAnsweredQuestions(new Set())
+      setTranscripts({})
+    }
+  }, [])
+
+  const handleTextAnswerChange = useCallback(
+    (questionNumber: number, questionText: string, sectionTitle: string, sectionIndex: number, value: string) => {
+      // Update local state immediately
+      setTranscripts((prev) => ({ ...prev, [questionNumber]: value }))
+
+      if (!textAssessmentId) return
+
+      // Clear existing timer for this question
+      if (saveTimersRef.current[questionNumber]) {
+        clearTimeout(saveTimersRef.current[questionNumber])
+      }
+
+      // Mark as saving
+      setSavingQuestions((prev) => new Set([...prev, questionNumber]))
+
+      // Debounce the save (800ms)
+      saveTimersRef.current[questionNumber] = setTimeout(async () => {
+        try {
+          const res = await fetch(`/audio-text-assessment/api/text-assessments/${textAssessmentId}/answers`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              questionNumber,
+              questionText,
+              sectionTitle,
+              sectionIndex,
+              answerText: value,
+            }),
+          })
+          if (!res.ok) throw new Error('Failed to save')
+          setAnsweredQuestions((prev) => new Set([...prev, questionNumber]))
+        } catch (error) {
+          console.error('Failed to save answer:', error)
+        } finally {
+          setSavingQuestions((prev) => {
+            const next = new Set(prev)
+            next.delete(questionNumber)
+            return next
+          })
+        }
+      }, 800)
+    },
+    [textAssessmentId]
+  )
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    const timers = saveTimersRef.current
+    return () => {
+      Object.values(timers).forEach(clearTimeout)
+    }
+  }, [])
+
+  // ── Audio Assessment Functions ─────────────────────────────────────────
 
   // Initialize assessment on first record
   const initializeAssessment = useCallback(async () => {
     if (assessmentId) return assessmentId
 
     try {
-      const assessment = await createAssessment({
-        sectionIndex: 0,
-        sectionTitle: 'Audio-Text Assessment',
+      const res = await fetch('/audio-text-assessment/api/audio-assessments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sectionIndex: 0,
+          sectionTitle: 'Audio-Text Assessment',
+        }),
       })
+      if (!res.ok) throw new Error('Failed to create')
+      const { assessment } = await res.json()
       setAssessmentId(assessment.id)
       return assessment.id
     } catch (error) {
@@ -216,22 +393,20 @@ export function AudioTextAssessmentForm() {
       setUploadingQuestions((prev) => new Set([...prev, questionNumber]))
 
       try {
-        // Upload audio file
-        const filePath = await uploadAudioFile(currentAssessmentId, questionNumber, blob)
+        // Upload audio file + save response record via API route
+        const formData = new FormData()
+        formData.append('audio', blob, `q${questionNumber}.webm`)
+        formData.append('questionNumber', String(questionNumber))
+        formData.append('questionText', questionText)
+        formData.append('sectionTitle', sectionTitle)
+        formData.append('transcriptText', transcript)
+        formData.append('durationSeconds', String(duration))
 
-        // Use the transcript passed in, fallback to state if needed
-        const transcriptText = transcript
-
-        // Save response record
-        await uploadAudioAndSaveResponse(currentAssessmentId, {
-          assessmentId: currentAssessmentId,
-          questionNumber,
-          questionText,
-          sectionTitle,
-          audioFilePath: filePath,
-          transcriptText,
-          durationSeconds: duration,
-        })
+        const res = await fetch(
+          `/audio-text-assessment/api/audio-assessments/${currentAssessmentId}/responses`,
+          { method: 'POST', body: formData }
+        )
+        if (!res.ok) throw new Error('Failed to save recording')
 
         // Mark as recorded
         setRecordedQuestions((prev) => new Set([...prev, questionNumber]))
@@ -325,34 +500,144 @@ export function AudioTextAssessmentForm() {
         <CardHeader>
           <CardTitle>Audio & Text Assessment Questionnaire</CardTitle>
           <CardDescription>
-            Record responses with automatic transcription. Edit text directly if needed. All recordings are securely saved.
+            Record responses with automatic transcription, or type answers directly. All data is securely saved.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="text-sm text-gray-600">
-              <p className="font-medium text-gray-900">
-                Progress: {recordedCount} of {totalQuestions} questions recorded
-              </p>
-              <p className="text-xs text-gray-500">
-                {Math.round((recordedCount / totalQuestions) * 100)}% Complete
-              </p>
-              <ProgressBar value={(recordedCount / totalQuestions) * 100} />
+          <div className="flex flex-col gap-4">
+            {/* Top row: progress + action buttons */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="text-sm text-gray-600">
+                <p className="font-medium text-gray-900">
+                  Audio: {recordedCount} of {totalQuestions} recorded
+                </p>
+                {textAssessmentId && (
+                  <p className="font-medium text-gray-900">
+                    Text: {answeredCount} of {totalQuestions} answered
+                  </p>
+                )}
+                <p className="text-xs text-gray-500">
+                  {Math.round((recordedCount / totalQuestions) * 100)}% recorded
+                  {textAssessmentId ? ` · ${Math.round((answeredCount / totalQuestions) * 100)}% answered` : ''}
+                </p>
+                <ProgressBar value={(recordedCount / totalQuestions) * 100} />
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  onClick={exportAssessment}
+                  disabled={isExporting || recordedCount === 0}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  {isExporting ? 'Exporting...' : 'Export Results'}
+                </Button>
+              </div>
             </div>
-            <Button
-              onClick={exportAssessment}
-              disabled={isExporting || recordedCount === 0}
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              {isExporting ? 'Exporting...' : 'Export Results'}
-            </Button>
+
+            {/* Text Assessment row: selector + new button */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 border-t pt-4">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Text Assessment</label>
+                {loadingAssessments ? (
+                  <p className="text-sm text-gray-500 flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading assessments...
+                  </p>
+                ) : assessmentsList.length > 0 ? (
+                  <select
+                    value={textAssessmentId ?? ''}
+                    onChange={(e) => {
+                      if (e.target.value === '__new__') {
+                        setShowNewAssessmentDialog(true)
+                      } else {
+                        handleSelectAssessment(e.target.value)
+                      }
+                    }}
+                    className="w-full sm:w-auto min-w-[240px] px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  >
+                    <option value="">— Select an assessment —</option>
+                    {assessmentsList.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.name} ({new Date(a.created_at).toLocaleDateString()})
+                      </option>
+                    ))}
+                    <option value="__new__">+ Start New Assessment</option>
+                  </select>
+                ) : (
+                  <p className="text-sm text-gray-500">No assessments yet</p>
+                )}
+              </div>
+              <Button
+                onClick={() => setShowNewAssessmentDialog(true)}
+                className="bg-primary-600 hover:bg-primary-700 text-white self-start"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Start New Assessment
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Questions Sections */}
-      <div className="space-y-4">
+      {/* New Assessment Dialog */}
+      <Dialog open={showNewAssessmentDialog} onOpenChange={setShowNewAssessmentDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Start New Text Assessment</DialogTitle>
+            <DialogDescription>
+              Give this assessment a name so you can identify it later.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <label htmlFor="assessment-name" className="block text-sm font-medium text-gray-700 mb-1">
+                Assessment Name
+              </label>
+              <Input
+                id="assessment-name"
+                value={textAssessmentName}
+                onChange={(e) => setTextAssessmentName(e.target.value)}
+                placeholder="e.g. John Smith - Initial Assessment"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && textAssessmentName.trim()) {
+                    handleCreateAssessment()
+                  }
+                }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowNewAssessmentDialog(false)
+                setTextAssessmentName('')
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreateAssessment}
+              disabled={!textAssessmentName.trim() || isCreatingAssessment}
+            >
+              {isCreatingAssessment ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create Assessment'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Questions Sections — only shown once an assessment is selected or created */}
+      {textAssessmentId ? (
+        <>
+        <div className="space-y-4">
         {QUESTIONNAIRE_DATA.map((section, sectionIndex) => (
           <Card key={sectionIndex}>
             <div
@@ -387,7 +672,12 @@ export function AudioTextAssessmentForm() {
                       onRecordingComplete={(qNum, qText, sectionTitle, blob, duration) =>
                         handleRecordingComplete(qNum, qText, sectionTitle, blob, duration)
                       }
-                      onTranscriptChange={handleTranscriptChange}
+                      onTranscriptChange={(qNum, text) =>
+                        textAssessmentId
+                          ? handleTextAnswerChange(qNum, question, section.section, sectionIndex, text)
+                          : handleTranscriptChange(qNum, text)
+                      }
+                      isSaving={savingQuestions.has(globalQuestionNumber)}
                       storageFolder="audio-text-audio"
                     />
                   )
@@ -396,23 +686,40 @@ export function AudioTextAssessmentForm() {
             )}
           </Card>
         ))}
-      </div>
+        </div>
 
-      {/* Footer Summary */}
-      <Card className="bg-gray-50">
-        <CardContent className="pt-6">
-          <div className="text-center">
-            <p className="text-lg font-semibold text-gray-900">
-              {recordedCount} of {totalQuestions} questions recorded
+        {/* Footer Summary */}
+        <Card className="bg-gray-50">
+          <CardContent className="pt-6">
+            <div className="text-center space-y-2">
+              <p className="text-lg font-semibold text-gray-900">
+                Audio: {recordedCount} of {totalQuestions} recorded
+              </p>
+              <p className="text-lg font-semibold text-gray-900">
+                Text: {answeredCount} of {totalQuestions} answered
+              </p>
+              <p className="text-sm text-gray-600">
+                {recordedCount === totalQuestions
+                  ? '✓ All questions recorded!'
+                  : `${totalQuestions - recordedCount} questions remaining`}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+        </>
+      ) : (
+        /* Empty state — prompt the user to select or create an assessment first */
+        <Card className="border-dashed">
+          <CardContent className="py-12 text-center">
+            <p className="text-base font-medium text-gray-900 mb-2">No Assessment Selected</p>
+            <p className="text-sm text-gray-500 max-w-md mx-auto">
+              Select a previous assessment from the dropdown above, or click
+              <span className="font-medium text-primary-600"> Start New Assessment </span>
+              to begin answering the questionnaire.
             </p>
-            <p className="text-sm text-gray-600 mt-2">
-              {recordedCount === totalQuestions
-                ? '✓ Assessment complete!'
-                : `${totalQuestions - recordedCount} questions remaining`}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

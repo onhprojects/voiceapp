@@ -1,11 +1,20 @@
 'use client'
 
-import React, { useState, useRef, useEffect } from 'react'
-import { Mic, Square, Play, Pause, Trash2, Download, Volume2 } from 'lucide-react'
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react'
+import { Mic, Square, Play, Pause, Volume2 } from 'lucide-react'
 
 interface AudioRecorderProps {
   onRecordingComplete: (blob: Blob, duration: number, transcript: string) => void
   onRecordingStart?: () => void
+}
+
+export interface AudioRecorderHandle {
+  start: () => Promise<void>
+}
+
+const capitalizeFirstLetter = (text: string): string => {
+  if (!text) return text
+  return text.charAt(0).toUpperCase() + text.slice(1)
 }
 
 interface RecordingState {
@@ -60,10 +69,13 @@ interface SpeechRecognitionAlternative {
   confidence: number
 }
 
-export function AudioRecorder({ 
-  onRecordingComplete,
-  onRecordingStart
-}: AudioRecorderProps) {
+export const AudioRecorder = forwardRef<AudioRecorderHandle, AudioRecorderProps>(function AudioRecorder(
+  { 
+    onRecordingComplete,
+    onRecordingStart
+  },
+  ref
+) {
   const [state, setState] = useState<RecordingState>({
     isRecording: false,
     isPaused: false,
@@ -79,10 +91,10 @@ export function AudioRecorder({
   const audioContextRef = useRef<AudioContext | null>(null)
   const chunksRef = useRef<Blob[]>([])
   const streamRef = useRef<MediaStream | null>(null)
-  const audioElementRef = useRef<HTMLAudioElement | null>(null)
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const speechRecognitionRef = useRef<SpeechRecognitionType | null>(null)
   const interimTranscriptRef = useRef<string>('')
+  const transcriptRef = useRef<string>('')
 
   // Initialize speech recognition
   useEffect(() => {
@@ -108,8 +120,9 @@ export function AudioRecorder({
           
           if (event.results[i].isFinal) {
             setState(prev => {
-              const updatedTranscript = prev.transcript + ' ' + transcript
-              return { ...prev, transcript: updatedTranscript.trim() }
+              const updatedTranscript = capitalizeFirstLetter((prev.transcript + ' ' + transcript).trim())
+              transcriptRef.current = updatedTranscript
+              return { ...prev, transcript: updatedTranscript }
             })
           } else {
             interimTranscriptRef.current += transcript + ' '
@@ -177,6 +190,16 @@ export function AudioRecorder({
 
       chunksRef.current = []
 
+      // Start timer
+      let seconds = 0
+      timerIntervalRef.current = setInterval(() => {
+        seconds++
+        setState((prev) => ({
+          ...prev,
+          duration: seconds,
+        }))
+      }, 1000)
+
       mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) {
           chunksRef.current.push(e.data)
@@ -184,16 +207,20 @@ export function AudioRecorder({
       }
 
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' })
-        setState((prev) => ({
-          ...prev,
-          audioBlob,
-          isRecording: false,
-        }))
-
         // Stop all tracks to release mic
         stream.getTracks().forEach((track) => track.stop())
         stopSpeechRecognition()
+
+        if (timerIntervalRef.current) {
+          clearInterval(timerIntervalRef.current)
+          timerIntervalRef.current = null
+        }
+
+        const finalTranscript = capitalizeFirstLetter(transcriptRef.current.trim())
+        const durationSeconds = Math.max(1, seconds)
+
+        // Auto-insert the transcribed text without saving the audio file
+        onRecordingComplete(new Blob(chunksRef.current, { type: 'audio/webm' }), durationSeconds, finalTranscript)
       }
 
       mediaRecorderRef.current = mediaRecorder
@@ -209,16 +236,6 @@ export function AudioRecorder({
 
       onRecordingStart?.()
       startSpeechRecognition()
-
-      // Start timer
-      let seconds = 0
-      timerIntervalRef.current = setInterval(() => {
-        seconds++
-        setState((prev) => ({
-          ...prev,
-          duration: seconds,
-        }))
-      }, 1000)
     } catch (error) {
       console.error('Error accessing microphone:', error)
       alert('Unable to access microphone. Please check your permissions.')
@@ -248,29 +265,6 @@ export function AudioRecorder({
     }
   }
 
-  const deleteRecording = () => {
-    setState({
-      isRecording: false,
-      isPaused: false,
-      audioBlob: null,
-      duration: 0,
-      currentTime: 0,
-      transcript: '',
-      isListening: false,
-      isSpeechRecognitionSupported: state.isSpeechRecognitionSupported,
-    })
-    if (audioElementRef.current) {
-      audioElementRef.current.src = ''
-    }
-    chunksRef.current = []
-  }
-
-  const saveRecording = () => {
-    if (state.audioBlob) {
-      onRecordingComplete(state.audioBlob, state.duration, state.transcript)
-    }
-  }
-
   useEffect(() => {
     return () => {
       if (timerIntervalRef.current) {
@@ -288,6 +282,11 @@ export function AudioRecorder({
     const secs = seconds % 60
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
+
+  // Expose start() so the parent can trigger recording within a user gesture
+  useImperativeHandle(ref, () => ({
+    start: () => startRecording(),
+  }))
 
   return (
     <div className="space-y-3">
@@ -360,39 +359,6 @@ export function AudioRecorder({
         </div>
       )}
 
-      {/* Playback Controls */}
-      {state.audioBlob && !state.isRecording && (
-        <div className="space-y-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <div>
-            <p className="text-sm font-medium text-gray-700 mb-2">Recording preview:</p>
-            <audio
-              ref={audioElementRef}
-              controls
-              className="w-full"
-              src={URL.createObjectURL(state.audioBlob)}
-            />
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={saveRecording}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors"
-            >
-              <Download className="h-4 w-4" />
-              Save Recording
-            </button>
-
-            <button
-              onClick={deleteRecording}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors"
-            >
-              <Trash2 className="h-4 w-4" />
-              Delete
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Timer Display During Recording */}
       {state.isRecording && (
         <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-50 border border-red-200 rounded-lg animate-pulse">
@@ -402,4 +368,4 @@ export function AudioRecorder({
       )}
     </div>
   )
-}
+})
