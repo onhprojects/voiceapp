@@ -748,7 +748,7 @@ CREATE INDEX IF NOT EXISTS idx_text_assessment_answers_assessment_id ON public.t
 -- Default admin settings options
 INSERT INTO public.admin_settings (option_name, option_value, option_field_type, option_title, option_description)
 VALUES
-    ('site_title', 'Resume Builder', 'text', 'Site Title', 'The name of your site shown in the browser tab and header.'),
+    ('site_title', 'TTS Intake', 'text', 'Site Title', 'The name of your site shown in the browser tab and header.'),
     ('site_tagline', 'Create your resume the easy way', 'text', 'Site Tagline', 'A short tagline shown on the homepage.'),
     ('support_email', 'support@example.com', 'text', 'Support Email', 'The email address used for support inquiries.'),
     ('company_name', 'Resume Builder', 'text', 'Company Name', 'The legal company name. Available as the [company_name] shortcode.'),

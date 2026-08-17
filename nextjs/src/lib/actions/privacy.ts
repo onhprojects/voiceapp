@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidateTag } from 'next/cache'
 import { createSSRClient } from '@/lib/supabase/server'
 import { Tables } from '@/lib/types'
 
@@ -64,5 +65,8 @@ export async function updatePrivacyPolicy(
     .single()
 
   if (error) throw new Error(error.message)
+  // Invalidate cached admin-setting reads (e.g. site title) so public
+  // pages reflect the change.
+  revalidateTag('admin-settings')
   return data as AdminSetting
 }

@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
+import { revalidateTag } from 'next/cache'
 import { getAdminSettings, updateAdminSetting } from '@/app/(dashboard)/admin/actions'
 
 /**
@@ -29,6 +30,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Setting id is required.' }, { status: 400 })
     }
     const updated = await updateAdminSetting(body.id, body.value ?? '')
+    // Invalidate the cached site title (and any other cached admin-setting
+    // reads) so the public header reflects the change immediately.
+    revalidateTag('admin-settings')
     return NextResponse.json({ success: true, setting: updated }, { status: 200 })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to save setting'

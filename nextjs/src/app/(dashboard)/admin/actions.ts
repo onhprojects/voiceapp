@@ -1,5 +1,6 @@
 'use server'
 
+import { unstable_cache } from 'next/cache'
 import { createSSRClient } from '@/lib/supabase/server'
 import { Tables } from '@/lib/types'
 
@@ -81,6 +82,23 @@ export async function getAdminSettingsByNames(
   }
   return result
 }
+
+/**
+ * Returns the site title shown in the public header, read from the admin
+ * "Site Title" option. Falls back to "TTS Intake" when the option is missing
+ * or empty. Cached server-side so the DB is not queried on every page load;
+ * the cache is invalidated (via the "admin-settings" tag) whenever any admin
+ * setting is saved.
+ */
+export const getSiteTitle = unstable_cache(
+  async (): Promise<string> => {
+    const settings = await getAdminSettingsByNames(['site_title'])
+    const title = settings['site_title']?.trim()
+    return title || 'TTS Intake'
+  },
+  ['site-title'],
+  { revalidate: 3600, tags: ['admin-settings'] }
+)
 
 /**
  * Updates a single admin setting's value. Only accessible to admin users.
