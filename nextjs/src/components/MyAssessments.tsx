@@ -162,7 +162,12 @@ export function MyAssessments({ assessments }: { assessments: TextAssessment[] }
                     </div>
                   ) : (
                     <>
-                      <p className="font-medium text-gray-900">{assessment.name}</p>
+                      <Link
+                        href={`/audio-text-assessment/${assessment.id}`}
+                        className="inline-block font-medium text-gray-900 hover:text-primary-600 hover:underline"
+                      >
+                        {assessment.name}
+                      </Link>
                       <p className="mt-1 flex items-center gap-1 text-xs text-gray-500">
                         <Calendar className="h-3 w-3" />
                         Created {formatDate(assessment.created_at)}

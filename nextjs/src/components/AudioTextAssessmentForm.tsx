@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useCallback, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { QuestionBlock } from './QuestionBlock'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -170,7 +171,13 @@ const QUESTIONNAIRE_DATA = [
   },
 ]
 
-export function AudioTextAssessmentForm() {
+export function AudioTextAssessmentForm({
+  initialAssessmentId,
+}: {
+  initialAssessmentId?: string | null
+}) {
+  const router = useRouter()
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [assessmentId, setAssessmentId] = useState<string | null>(null)
   const [recordedQuestions, setRecordedQuestions] = useState<Set<number>>(new Set())
   const [uploadingQuestions, setUploadingQuestions] = useState<Set<number>>(new Set())
@@ -234,6 +241,9 @@ export function AudioTextAssessmentForm() {
       setTextAssessmentId(assessment.id)
       setTextAssessmentName('')
       setShowNewAssessmentDialog(false)
+      setLoadError(null)
+      // Navigate to the new assessment's URL so it can be reloaded/shared.
+      router.replace(`/audio-text-assessment/${assessment.id}`)
       // A brand-new assessment is blank: clear all text fields and answered
       // state immediately so no answers carry over from the previous assessment.
       setTranscripts({})
@@ -260,31 +270,50 @@ export function AudioTextAssessmentForm() {
     } finally {
       setIsCreatingAssessment(false)
     }
-  }, [textAssessmentName, loadAssessments])
+  }, [textAssessmentName, loadAssessments, router])
 
-  const handleSelectAssessment = useCallback(async (assessmentId: string) => {
-    setTextAssessmentId(assessmentId)
-    try {
-      const res = await fetch(`/audio-text-assessment/api/text-assessments/${assessmentId}/answers`)
-      if (!res.ok) throw new Error('Failed to load answers')
-      const { answers } = await res.json()
-      const answered = new Set<number>()
-      const transcriptMap: Record<number, string> = {}
-      for (const answer of answers) {
-        answered.add(answer.question_number)
-        transcriptMap[answer.question_number] = answer.answer_text
+  const handleSelectAssessment = useCallback(
+    async (assessmentId: string) => {
+      try {
+        const res = await fetch(`/audio-text-assessment/api/text-assessments/${assessmentId}/answers`)
+        if (!res.ok) throw new Error('Failed to load answers')
+        const { answers } = await res.json()
+        const answered = new Set<number>()
+        const transcriptMap: Record<number, string> = {}
+        for (const answer of answers) {
+          answered.add(answer.question_number)
+          transcriptMap[answer.question_number] = answer.answer_text
+        }
+        // Only switch the active assessment once the answers loaded successfully,
+        // so a stale/missing assessment never leaves the form half-loaded.
+        setTextAssessmentId(assessmentId)
+        // Replace (not merge) so answers from a previously selected assessment
+        // don't bleed into the newly selected one.
+        setAnsweredQuestions(answered)
+        setTranscripts(transcriptMap)
+        setLoadError(null)
+        // Keep the URL in sync so the page is shareable/reloadable.
+        router.replace(`/audio-text-assessment/${assessmentId}`)
+      } catch (error) {
+        console.error('Failed to load assessment answers:', error)
+        setTextAssessmentId(null)
+        setAnsweredQuestions(new Set())
+        setTranscripts({})
+        setLoadError('Could not load this assessment. It may have been deleted or you may not have access to it.')
       }
-      // Replace (not merge) so answers from a previously selected assessment
-      // don't bleed into the newly selected one.
-      setAnsweredQuestions(answered)
-      setTranscripts(transcriptMap)
-    } catch (error) {
-      console.error('Failed to load assessment answers:', error)
-      // If loading fails, clear the fields so stale answers aren't shown.
-      setAnsweredQuestions(new Set())
-      setTranscripts({})
+    },
+    [router]
+  )
+
+  // When the page was opened with an assessment id in the URL
+  // (e.g. /audio-text-assessment/{id}), load that assessment's answers.
+  // If there is no id in the URL, we show the dropdown + "Start New
+  // Assessment" UI as normal.
+  useEffect(() => {
+    if (initialAssessmentId) {
+      handleSelectAssessment(initialAssessmentId)
     }
-  }, [])
+  }, [initialAssessmentId, handleSelectAssessment])
 
   const handleTextAnswerChange = useCallback(
     (questionNumber: number, questionText: string, sectionTitle: string, sectionIndex: number, value: string) => {
@@ -529,6 +558,12 @@ export function AudioTextAssessmentForm() {
                 </Button>
               </div>
             </div>
+
+            {loadError && (
+              <div className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+                {loadError}
+              </div>
+            )}
 
             {/* Text Assessment row: selector + new button */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 border-t pt-4">
