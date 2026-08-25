@@ -176,6 +176,12 @@ export const AudioRecorder = forwardRef<AudioRecorderHandle, AudioRecorderProps>
 
   const startRecording = async () => {
     try {
+      // Reset transcript state so a new recording starts fresh instead of
+      // appending to the previous recording's text.
+      transcriptRef.current = ''
+      interimTranscriptRef.current = ''
+      setState((prev) => ({ ...prev, transcript: '' }))
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       streamRef.current = stream
 

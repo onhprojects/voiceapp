@@ -1,7 +1,7 @@
 'use server'
 
 import { unstable_cache } from 'next/cache'
-import { createSSRClient } from '@/lib/supabase/server'
+import { createSSRClient, createSSRClientNoCookies } from '@/lib/supabase/server'
 import { Tables } from '@/lib/types'
 
 type AdminSetting = Tables<'admin_settings'>
@@ -92,9 +92,22 @@ export async function getAdminSettingsByNames(
  */
 export const getSiteTitle = unstable_cache(
   async (): Promise<string> => {
-    const settings = await getAdminSettingsByNames(['site_title'])
-    const title = settings['site_title']?.trim()
-    return title || 'TTS Intake'
+    // Uses the cookie-free client: unstable_cache forbids dynamic data sources
+    // like cookies(), and this lookup only needs anon (RLS-public) data.
+    const supabase = await createSSRClientNoCookies()
+    const { data, error } = await supabase
+      .from('admin_settings')
+      .select('option_name, option_value')
+      .in('option_name', ['site_title'])
+
+    if (error) {
+      console.error('Failed to fetch site title:', error)
+      return 'TTS Intake'
+    }
+
+    const title = data?.find((row) => row.option_name === 'site_title')
+      ?.option_value
+    return title?.trim() || 'TTS Intake'
   },
   ['site-title'],
   { revalidate: 3600, tags: ['admin-settings'] }
