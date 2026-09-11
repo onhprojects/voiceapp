@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { ExportMenu } from './ExportMenu'
 import { Tables } from '@/lib/types'
 
 type TextAssessment = Tables<'text_assessments'>
@@ -178,6 +179,7 @@ export function MyAssessments({ assessments }: { assessments: TextAssessment[] }
 
                 {!isRenaming && (
                   <div className="flex shrink-0 items-center gap-2">
+                    <ExportMenu assessmentId={assessment.id} size="sm" variant="outline" />
                     <Button
                       variant="outline"
                       size="sm"

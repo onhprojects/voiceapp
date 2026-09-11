@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ProgressBar } from '@/components/ui/ProgressBar'
+import { ExportMenu } from './ExportMenu'
 import {
   Dialog,
   DialogContent,
@@ -15,7 +16,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { Download, ChevronDown, Plus, Loader2 } from 'lucide-react'
+import { ChevronDown, Plus, Loader2 } from 'lucide-react'
 
 // Text assessment uses API routes (same pattern as resume builder)
 // to avoid the "Invalid Server Actions request" issue.
@@ -182,7 +183,6 @@ export function AudioTextAssessmentForm({
   const [recordedQuestions, setRecordedQuestions] = useState<Set<number>>(new Set())
   const [uploadingQuestions, setUploadingQuestions] = useState<Set<number>>(new Set())
   const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set([0]))
-  const [isExporting, setIsExporting] = useState(false)
   const [transcripts, setTranscripts] = useState<Record<number, string>>({})
 
   // Text assessment state
@@ -473,55 +473,6 @@ export function AudioTextAssessmentForm({
     })
   }
 
-  const exportAssessment = async () => {
-    if (!assessmentId) {
-      alert('No assessment to export.')
-      return
-    }
-
-    setIsExporting(true)
-    try {
-      // Create a manifest of all recorded questions
-      const recordedQuestionsData = Array.from(recordedQuestions).map((qNum) => {
-        let currentQNum = 0
-        for (const section of QUESTIONNAIRE_DATA) {
-          for (const question of section.questions) {
-            currentQNum++
-            if (currentQNum === qNum) {
-              return {
-                number: qNum,
-                text: question,
-                section: section.section,
-                transcript: transcripts[qNum] || '',
-              }
-            }
-          }
-        }
-        return { number: qNum }
-      })
-
-      const manifest = {
-        assessmentId,
-        totalQuestions,
-        recordedQuestions: recordedCount,
-        percentage: Math.round((recordedCount / totalQuestions) * 100),
-        exportedAt: new Date().toISOString(),
-        questions: recordedQuestionsData,
-      }
-
-      // For now, just log the manifest
-      console.log('Assessment Export:', manifest)
-      alert(
-        `Assessment exported! Recorded ${recordedCount} out of ${totalQuestions} questions (${Math.round((recordedCount / totalQuestions) * 100)}%)`
-      )
-    } catch (error) {
-      console.error('Failed to export assessment:', error)
-      alert('Failed to export assessment.')
-    } finally {
-      setIsExporting(false)
-    }
-  }
-
   return (
     <div className="space-y-6">
       {/* Header Card */}
@@ -548,14 +499,11 @@ export function AudioTextAssessmentForm({
                 <ProgressBar value={(answeredCount / totalQuestions) * 100} />
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  onClick={exportAssessment}
-                  disabled={isExporting || recordedCount === 0}
+                <ExportMenu
+                  assessmentId={textAssessmentId}
+                  disabled={!textAssessmentId || answeredCount === 0}
                   className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  {isExporting ? 'Exporting...' : 'Export Results'}
-                </Button>
+                />
               </div>
             </div>
 
